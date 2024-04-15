@@ -1,0 +1,3 @@
+Allowed parameters in the configuration file are: IgnorePatternWithRegexes, SearchOption, DontRunChk, BaseNumberLength, Encode, CheckOption, OtherOption, ExcludedPlistsRegexes, LocationCodes.
+Configuration file errors:
+Error in line 15: Unknown parameter 'IgnorePatternsWithRegexes'.
