@@ -175,17 +175,27 @@ def FillPASPTDFile(pup_json_path, encode_values, cleaned_plist_names_combined, t
 
             for plist_name, _ in cleaned_plist_names_combined:
                 patterns_to_disable = []
+                added_patterns = set()  # Keep track of patterns already added
+
                 for instance in test_instances_caught_by_regex:
-                    if dont_run_chk == False:
-                        if instance["MatchFound"] == True:
+                    if not dont_run_chk:
+                        if instance["MatchFound"]:
                             if instance["patlist"] == plist_name:
                                 if "scope" in instance:
                                     patlist_with_scope = f"{instance['scope']}::{plist_name}"
                                 else:
                                     patlist_with_scope = plist_name
 
+                                # Check and append patterns with their occurrences
                                 for pattern_info in instance["patterns_to_disable"]:
-                                    patterns_to_disable.append({"Pattern": pattern_info})
+                                    if pattern_info not in added_patterns:  # Check if pattern has not been added already
+                                        pattern_entry = {"Pattern": pattern_info}
+                                        # Check if the pattern exists in patterns_with_multiple_occurrences
+                                        if pattern_info in instance.get("patterns_with_multiple_occurrences", {}):
+                                            occurrences = instance["patterns_with_multiple_occurrences"][pattern_info]
+                                            pattern_entry["Occurrence"] = ",".join(map(str, occurrences))
+                                        patterns_to_disable.append(pattern_entry)
+                                        added_patterns.add(pattern_info)  # Mark pattern as added
                                 break
                     else:
                         if plist_name in instance["patlist"]:
@@ -193,8 +203,16 @@ def FillPASPTDFile(pup_json_path, encode_values, cleaned_plist_names_combined, t
                                 patlist_with_scope = f"{instance['scope']}::{plist_name}"
                             else:
                                 patlist_with_scope = plist_name
+                            # Check and append patterns with their occurrences
                             for pattern_info in instance["patterns_to_disable"]:
-                                patterns_to_disable.append({"Pattern": pattern_info})
+                                if pattern_info not in added_patterns:  # Check if pattern has not been added already
+                                    pattern_entry = {"Pattern": pattern_info}
+                                    # Check if the pattern exists in patterns_with_multiple_occurrences
+                                    if pattern_info in instance.get("patterns_with_multiple_occurrences", {}):
+                                        occurrences = instance["patterns_with_multiple_occurrences"][pattern_info]
+                                        pattern_entry["Occurrence"] = ",".join(map(str, occurrences))
+                                    patterns_to_disable.append(pattern_entry)
+                                    added_patterns.add(pattern_info)  # Mark pattern as added
                             break
                         
                 #if not(dont_run_chk == True and instance["search_or_check"] == "CHK"):
