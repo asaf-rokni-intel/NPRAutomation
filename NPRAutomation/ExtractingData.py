@@ -300,7 +300,7 @@ def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option
                 if patlist in plist_content.read():
                     plist_found = True
                     plist_found_in_files.add(plist_file)
-                    test["patterns"], test["total_num_of_patterns_in_plist"], test["num_of_patterns_to_keep"], test["patterns_to_keep"] = ExtractPatternsFromPlist(patlist, plist_file, ignore_patterns_with_regexes)
+                    test["patterns"], test["total_num_of_patterns_in_plist"], test["num_of_patterns_to_keep"], test["patterns_to_keep"], test["patterns_with_multiple_occurrences"] = ExtractPatternsFromPlist(patlist, plist_file, ignore_patterns_with_regexes)
                     if search_or_check == search_option_value:
                         test["patterns_to_disable"], errors_from_rules_search, test["patterns_to_keep_from_npr"] = RemoveEnabledContentFromPatterns(test_name, test, input_files_path)
                         for error in errors_from_rules_search:
@@ -367,6 +367,8 @@ def ExtractPatternsFromPlist(patlist, plist_content_path, ignore_patterns_with_r
     curly_bracket_count = 0
     total_num_of_patterns_in_plist = 0
     num_of_patterns_to_keep = 0
+    pattern_occurrences = {}  # Dictionary to track occurrences of each pattern
+    pattern_keep_indices = {}  # Dictionary to track indices of occurrences to remove due to #KEEP#
 
     with open(plist_content_path, 'r') as plist_content:
         for line in plist_content:
@@ -380,6 +382,22 @@ def ExtractPatternsFromPlist(patlist, plist_content_path, ignore_patterns_with_r
                     break
                 elif line.startswith("Pat "):
                     pattern = line.lstrip("Pat ").rstrip(";")
+                    
+                    # Increment the occurrence count correctly before checking for #KEEP#
+                    occurrence_number = len(pattern_occurrences.get(pattern, [])) + 1
+                    
+                    # Track occurrences of each pattern
+                    if pattern in pattern_occurrences:
+                        pattern_occurrences[pattern].append(occurrence_number)
+                    else:
+                        pattern_occurrences[pattern] = [occurrence_number]
+
+                    if "#KEEP#" in line:
+                        if pattern in pattern_keep_indices:
+                            pattern_keep_indices[pattern].append(occurrence_number)
+                        else:
+                            pattern_keep_indices[pattern] = [occurrence_number]
+
                     # KEEP is in the line, after the ";", so search there and not in the pattern.
                     if not (re.search(r'\[Mask', pattern) or "#KEEP#" in line or any(re.search(regex, pattern) for regex in ignore_patterns_with_regexes)):
                         patterns.append(pattern)
@@ -398,8 +416,17 @@ def ExtractPatternsFromPlist(patlist, plist_content_path, ignore_patterns_with_r
                         if "{" in next_line:
                             curly_bracket_count = next_line.count("{")
                             break
+
+    # Adjust occurrences for patterns with #KEEP#
+    for pattern, keep_indices in pattern_keep_indices.items():
+        if pattern in pattern_occurrences:
+            adjusted_occurrences = [occ for occ in pattern_occurrences[pattern] if occ not in keep_indices]
+            pattern_occurrences[pattern] = adjusted_occurrences
+
+    # Filter to keep only patterns with more than one occurrence
+    patterns_with_multiple_occurrences = {pattern: occurrences for pattern, occurrences in pattern_occurrences.items() if len(occurrences) > 1}
                                
-    return patterns, total_num_of_patterns_in_plist, num_of_patterns_to_keep, patterns_to_keep
+    return patterns, total_num_of_patterns_in_plist, num_of_patterns_to_keep, patterns_to_keep, patterns_with_multiple_occurrences
 
 def LocateRuleFile(patlist, directory):
     for root, _, files in os.walk(directory):
@@ -597,4 +624,4 @@ def AddPatternsAndScope(test, ignore_patterns_with_regexes):
     for plist_file in plist_files:
         with open(plist_file, 'r') as plist_content:
             if patlist in plist_content.read():
-                test["patterns"], test["total_num_of_patterns_in_plist"], test["num_of_patterns_to_keep"], test["patterns_to_keep"] = ExtractPatternsFromPlist(patlist, plist_file, ignore_patterns_with_regexes)
+                test["patterns"], test["total_num_of_patterns_in_plist"], test["num_of_patterns_to_keep"], test["patterns_to_keep"], test["patterns_with_multiple_occurrences"] = ExtractPatternsFromPlist(patlist, plist_file, ignore_patterns_with_regexes)
