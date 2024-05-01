@@ -104,9 +104,9 @@ def FillNPRInputFile(unique_model_names, test_instances_caught_by_regex, npr_inp
 
         for model_name in sorted(unique_model_names):
             if model_name.endswith('0'):
-                plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex]# if test.get("rule_file") is not None] # and test.get("MatchFound") is True)]
+                plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex if test.get("rule_file") is not None] # and test.get("MatchFound") is True)]
             else:
-                plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex]# if test.get("rule_file") is None] # and test.get("MatchFound") is True)]
+                plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex if test.get("rule_file") is None] # and test.get("MatchFound") is True)]
 
             plist_names_combined.update(plist_names)
 
