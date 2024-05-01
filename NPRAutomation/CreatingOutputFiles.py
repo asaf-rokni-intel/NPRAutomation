@@ -11,7 +11,7 @@ def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, con
     #Create NPRCriteriaFile.csv
     npr_criteria_csv_path = os.path.join(output_path, "NPRCriteriaFile.csv")
     print("Creating NPRCriteriaFile.csv file.")
-    unique_model_names, encode_values = FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path)
+    unique_model_names, encode_values = FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path, dont_run_chk)
 
     #Create NPRInputFile.csv
     npr_input_csv_path = os.path.join(output_path, "NPRInputFile.csv")
@@ -48,7 +48,7 @@ def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, con
 
     return log_files_directory
 
-def FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path):
+def FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path, dont_run_chk):
     with open(conf_file_path, 'r') as conf_file:
         lines = conf_file.readlines()
 
@@ -71,7 +71,11 @@ def FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path):
         
         for encode_value in encode_values:
             for location_code in location_codes:
-                for full_percentage in range(2):
+                if dont_run_chk is True:
+                    range_for_percentages = 1
+                else:
+                    range_for_percentages = 2
+                for full_percentage in range(range_for_percentages):
                     model_name = f'{encode_value}NPRR{full_percentage}'
                     unique_model_names.add(model_name)  #Add to the set of unique ModelName values
                     writer.writerow({
@@ -100,9 +104,9 @@ def FillNPRInputFile(unique_model_names, test_instances_caught_by_regex, npr_inp
 
         for model_name in sorted(unique_model_names):
             if model_name.endswith('0'):
-                plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex]# if (test.get("rule_file") is not None and test.get("MatchFound") is True)]
+                plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex]# if test.get("rule_file") is not None] # and test.get("MatchFound") is True)]
             else:
-                plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex]# if (test.get("rule_file") is None and test.get("MatchFound") is True)]
+                plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex]# if test.get("rule_file") is None] # and test.get("MatchFound") is True)]
 
             plist_names_combined.update(plist_names)
 
