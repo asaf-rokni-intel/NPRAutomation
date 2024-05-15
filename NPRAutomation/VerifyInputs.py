@@ -188,7 +188,7 @@ def CheckConfFile(conf_path, json_file_path = None):
             if parameter == "OtherOptions":
                 for value in values:
                     if value is search_option_value or value is check_option_value:
-                        errors.append(f"OtherOptions's value {value} should be different from {search_option_value} and {check_option_value}")
+                        errors.append(f"OtherOptions' value {value} should be different from {search_option_value} and {check_option_value}")
                     else:
                         other_options_values.add(value)
                        
