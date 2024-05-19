@@ -78,7 +78,7 @@ if __name__ == "__main__":
             print()
 
         #Creating output files:
-        log_files_directory = CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes)
+        log_files_directory = CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values)
 
         sys.stdout = original_stdout
         sys.stderr = original_stderr

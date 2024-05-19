@@ -7,16 +7,16 @@ import shutil
 import sys
 from ExtractingData import *
 
-def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes):
+def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values):
     #Create NPRCriteriaFile.csv
     npr_criteria_csv_path = os.path.join(output_path, "NPRCriteriaFile.csv")
     print("Creating NPRCriteriaFile.csv file.")
-    unique_model_names, encode_values = FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path, dont_run_chk)
+    unique_model_names, encode_values = FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path, dont_run_chk, other_options_values)
 
     #Create NPRInputFile.csv
     npr_input_csv_path = os.path.join(output_path, "NPRInputFile.csv")
     print("Creating NPRInputFile.csv file.")
-    cleaned_plist_names_combined = FillNPRInputFile(unique_model_names, test_instances_caught_by_regex, npr_input_csv_path)
+    cleaned_plist_names_combined = FillNPRInputFile(unique_model_names, test_instances_caught_by_regex, npr_input_csv_path, dont_run_chk)
 
     #Create PAS_PTD.pup.json
     pup_json_path = os.path.join(output_path, "PAS_PTD.pup.json")
@@ -48,7 +48,7 @@ def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, con
 
     return log_files_directory
 
-def FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path, dont_run_chk):
+def FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path, dont_run_chk, other_options_values):
     with open(conf_file_path, 'r') as conf_file:
         lines = conf_file.readlines()
 
@@ -75,6 +75,9 @@ def FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path, dont_run_chk):
                     range_for_percentages = 1
                 else:
                     range_for_percentages = 2
+                
+                range_for_percentages += len(other_options_values)
+                    
                 for full_percentage in range(range_for_percentages):
                     model_name = f'{encode_value}NPRR{full_percentage}'
                     unique_model_names.add(model_name)  #Add to the set of unique ModelName values
@@ -93,7 +96,7 @@ def FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path, dont_run_chk):
 
     return list(unique_model_names), encode_values
 
-def FillNPRInputFile(unique_model_names, test_instances_caught_by_regex, npr_input_csv_path):
+def FillNPRInputFile(unique_model_names, test_instances_caught_by_regex, npr_input_csv_path, dont_run_chk):
     plist_names_combined = set()
 
     with open(npr_input_csv_path, 'w', newline='') as csvfile:
@@ -102,21 +105,40 @@ def FillNPRInputFile(unique_model_names, test_instances_caught_by_regex, npr_inp
         
         writer.writeheader()
 
-        for model_name in sorted(unique_model_names):
-            if model_name.endswith('0'):
-                plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex if test.get("rule_file") is not None] # and test.get("MatchFound") is True)]
-            else:
-                plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex if test.get("rule_file") is None] # and test.get("MatchFound") is True)]
+        if dont_run_chk is True:
+            for model_name in sorted(unique_model_names):
+                if model_name.endswith('0'):
+                    plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex]
+                else:
+                    plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex if test.get("rule_file") is not None]
+                    
+                plist_names_combined.update(plist_names)
 
-            plist_names_combined.update(plist_names)
+                cleaned_plist_names = CleanUpPlistNames(plist_names)
+                for plist_name, ip_name in cleaned_plist_names:
+                    writer.writerow({
+                        'ModelName': model_name,
+                        'PlistName': plist_name,
+                        'Ipname': ip_name
+                    })
+        else:
+            for model_name in sorted(unique_model_names):
+                if model_name.endswith('0'):
+                    plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex if test.get("rule_file") is not None and test.get("MatchFound") is True]
+                elif model_name.endswith('1'):
+                    plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex if test.get("rule_file") is None and test.get("MatchFound") is True]
+                else:
+                    plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex if test.get("rule_file") is not None]
 
-            cleaned_plist_names = CleanUpPlistNames(plist_names)
-            for plist_name, ip_name in cleaned_plist_names:
-                writer.writerow({
-                    'ModelName': model_name,
-                    'PlistName': plist_name,
-                    'Ipname': ip_name
-                })
+                plist_names_combined.update(plist_names)
+
+                cleaned_plist_names = CleanUpPlistNames(plist_names)
+                for plist_name, ip_name in cleaned_plist_names:
+                    writer.writerow({
+                        'ModelName': model_name,
+                        'PlistName': plist_name,
+                        'Ipname': ip_name
+                    })
 
     cleaned_plist_names_combined = CleanUpPlistNames(plist_names_combined)
     return cleaned_plist_names_combined
