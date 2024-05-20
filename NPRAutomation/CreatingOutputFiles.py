@@ -7,7 +7,7 @@ import shutil
 import sys
 from ExtractingData import *
 
-def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values):
+def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path):
     #Create NPRCriteriaFile.csv
     npr_criteria_csv_path = os.path.join(output_path, "NPRCriteriaFile.csv")
     print("Creating NPRCriteriaFile.csv file.")
@@ -25,7 +25,7 @@ def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, con
     pas_ptd_complete_tests_list = []
     FillPASPTDFile(pup_json_path, encode_values, cleaned_plist_names_combined, test_instances_caught_by_regex, pas_ptd_complete_tests_list, dont_run_chk)
     if json_file_path is not None:
-        UpdatePASPTDFile(json_file_path, pup_json_path, test_instances_caught_by_regex, test_instances_not_caught, conf_file_path, pas_ptd_complete_tests_list, ignore_patterns_with_regexes)
+        UpdatePASPTDFile(json_file_path, pup_json_path, test_instances_caught_by_regex, test_instances_not_caught, conf_file_path, pas_ptd_complete_tests_list, ignore_patterns_with_regexes, supersede_dir_path)
         
     #Create FlatFile.csv
     flat_file_csv_path = os.path.join(output_path, "FlatFile.csv")
@@ -411,7 +411,7 @@ def GetPatlistDataFromJson(json_output_file):
 
     return patlist_data
 
-def UpdatePASPTDFile(json_input_file, json_output_file, test_instances_caught_by_regex, test_instances_not_caught, conf_file_path, pas_ptd_complete_tests_list, ignore_patterns_with_regexes):
+def UpdatePASPTDFile(json_input_file, json_output_file, test_instances_caught_by_regex, test_instances_not_caught, conf_file_path, pas_ptd_complete_tests_list, ignore_patterns_with_regexes, supersede_dir_path):
     print("Updating PAS_PTD.pup.json file")
     print()
     
@@ -472,7 +472,7 @@ def UpdatePASPTDFile(json_input_file, json_output_file, test_instances_caught_by
         # Iterate through tests in ab_list_tests for this socket
         for test in ab_list_tests[socket_name]:
             if "patterns" not in test:
-                AddPatternsAndScope(test, ignore_patterns_with_regexes)
+                AddPatternsAndScope(test, ignore_patterns_with_regexes, supersede_dir_path)
 
         for test in ab_list_tests[socket_name]:
             if "ab_list_numbers" in test:

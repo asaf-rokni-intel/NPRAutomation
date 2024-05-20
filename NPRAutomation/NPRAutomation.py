@@ -34,6 +34,7 @@ if __name__ == "__main__":
         conf_file_path = GetConfFilePath(input_files_path)
         search_option_value, check_option_value, other_options_values, dont_run_chk, ignore_patterns_with_regexes = CheckConfFile(conf_file_path, json_file_path)
         csv_file_path = TestCsvDataVerification(input_files_path, search_option_value, check_option_value, other_options_values)
+        supersede_dir_path = FindSupersedePath(tp_path)
         
         # Extracting data from input files:
         uservar_file_path = os.path.join(tp_path, "Shared", "CPU_Shared", "UservarDefinitions_IP_CPU.usrv")    
@@ -42,7 +43,7 @@ if __name__ == "__main__":
         filtered_tests, excluded_tests = RemoveExcludedPatlists(tests_with_patlist, conf_file_path)
         test_instances_caught_by_regex, test_instances_not_caught = CatchTestInstancesByRegex(csv_file_path, filtered_tests)    
         AddRuleFileToTestInstances(test_instances_caught_by_regex, input_files_path)
-        plist_found_in_files = ProcessPlistFiles(test_instances_caught_by_regex, input_files_path, search_option_value, check_option_value, other_options_values, ignore_patterns_with_regexes)
+        plist_found_in_files = ProcessPlistFiles(test_instances_caught_by_regex, input_files_path, search_option_value, check_option_value, other_options_values, ignore_patterns_with_regexes, supersede_dir_path)
         
         print()
         print("Plist files where a patlist was found:")
@@ -87,7 +88,7 @@ if __name__ == "__main__":
             print()
 
         #Creating output files:
-        log_files_directory = CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values)
+        log_files_directory = CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path)
 
         sys.stdout = original_stdout
         sys.stderr = original_stderr

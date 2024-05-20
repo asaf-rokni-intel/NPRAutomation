@@ -315,3 +315,18 @@ def FindJsonFile(input_files_path):
         if file.endswith(".json"):
             return os.path.join(input_files_path, file)
     return None
+
+def FindSupersedePath(tp_path):
+    supersede_dir_path = None
+
+    # Traverse the directory tree to find a directory that matches "Supersedes" case-insensitively
+    for root, dirs, files in os.walk(tp_path):
+        for dir in dirs:
+            if dir.lower() == "supersedes":
+                supersede_dir_path = os.path.join(root, dir)
+                return supersede_dir_path
+            
+    # If the loop completes without finding the directory, print an error message
+    if supersede_dir_path is None:
+        print("Error: 'Supersedes' directory not found in the given path.")
+        return None

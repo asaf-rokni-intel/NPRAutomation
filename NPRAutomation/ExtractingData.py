@@ -241,7 +241,7 @@ def CatchTestInstancesByRegex(csv_file_path, filtered_tests):
 
     return test_instances_caught_by_regex, test_instances_not_caught
 
-def ExtractPlistFilesFromMconfig(mconfig_file):
+def ExtractPlistFilesFromMconfig(mconfig_file, supersede_dir_path):
     plist_files = []
     scope = None
     
@@ -265,14 +265,39 @@ def ExtractPlistFilesFromMconfig(mconfig_file):
             full_path = os.path.join(path, rev, patch, "plb", plist_file)
             plist_files.append(full_path)
     
+    plist_files = FindAndReplaceWithSupersedePlists(plist_files, supersede_dir_path)
+    
     return plist_files, scope
+
+def FindAndReplaceWithSupersedePlists(plist_files, supersede_dir_path):
+    superseded_plist_files = []
+
+    if supersede_dir_path:
+        for plist_file in plist_files:
+            plist_file_name = os.path.basename(plist_file)
+            file_swapped = False
+
+            for root, dirs, files in os.walk(supersede_dir_path):
+                if plist_file_name in files:
+                    supersede_path = os.path.join(root, plist_file_name)
+                    superseded_plist_files.append(supersede_path)
+                    file_swapped = True
+                    print(f"Swapped: {plist_file_name} with supersede version at {supersede_path}")
+                    break
+
+            if not file_swapped:
+                superseded_plist_files.append(plist_file)
+    else:
+        superseded_plist_files = plist_files
+
+    return superseded_plist_files
 
 def AddRuleFileToTestInstances(test_instances_caught_by_regex, input_files_path):
     for test in test_instances_caught_by_regex:
         rule_file = LocateRuleFile(test["patlist"], input_files_path)
         test["rule_file"] = rule_file
 
-def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option_value, other_options_values, ignore_patterns_with_regexes):
+def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option_value, other_options_values, ignore_patterns_with_regexes, supersede_dir_path):
     errors = []
     plist_found_in_files = set()
 
@@ -287,7 +312,7 @@ def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option
         if "::" in patlist:
             patlist = patlist.split("::", 1)[1]
 
-        plist_files, scope = ExtractPlistFilesFromMconfig(mconfig_file)
+        plist_files, scope = ExtractPlistFilesFromMconfig(mconfig_file, supersede_dir_path)
         
         test["scope"] = scope
         
@@ -607,7 +632,7 @@ def ExtractAbListPatlists(json_input_file):
 
     return ab_list_patlists
 
-def AddPatternsAndScope(test, ignore_patterns_with_regexes):
+def AddPatternsAndScope(test, ignore_patterns_with_regexes, supersede_dir_path):
     patlist = test["patlist"]
     mconfig_file = test["mconfig_file"]
 
@@ -615,7 +640,7 @@ def AddPatternsAndScope(test, ignore_patterns_with_regexes):
         patlist = patlist.split("::", 1)[1]
 
     # Extract plist files and scope from mconfig file
-    plist_files, scope = ExtractPlistFilesFromMconfig(mconfig_file)
+    plist_files, scope = ExtractPlistFilesFromMconfig(mconfig_file, supersede_dir_path)
 
     # Assign the extracted scope to the test
     test["scope"] = scope
