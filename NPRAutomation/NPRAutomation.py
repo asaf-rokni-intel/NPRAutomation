@@ -3,11 +3,20 @@ from ExtractingData import *
 from CreatingOutputFiles import *
 
 if __name__ == "__main__":
+    
+    # Attempt to get the paths automatically
+    tp_path, input_files_path, output_path = get_automatic_paths()
 
-    # Getting inputs from the user:
-    tp_path = GetTpPath()
-    input_files_path = GetInputFilesPath()
-    output_path = GetOutputPath()
+    # If running as an exe and the paths do not exist, prompt the user for input
+    if getattr(sys, 'frozen', False) and not paths_exist(tp_path, input_files_path, output_path):
+        print("Could not locate required paths automatically. Please enter them manually.")
+        tp_path = GetTpPath()
+        input_files_path = GetInputFilesPath()
+        output_path = GetOutputPath()
+    elif not getattr(sys, 'frozen', False):  # Running from IDE or a normal Python process
+        tp_path = GetTpPath()
+        input_files_path = GetInputFilesPath()
+        output_path = GetOutputPath()
 
     log_file_path = os.path.join(output_path, "log.txt")
     

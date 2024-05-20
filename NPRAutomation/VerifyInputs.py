@@ -5,6 +5,19 @@ import re
 import sys
 from warnings import catch_warnings
 
+# Getting inputs from the user:
+def get_automatic_paths():
+    # Assuming 'tpPath', 'inputFilesPath', and 'outputPath' are relative to the exe's directory
+    base_path = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__)
+    tp_path = os.path.join(base_path, "tpPath")
+    input_files_path = os.path.join(base_path, "inputFilesPath")
+    output_path = os.path.join(base_path, "outputPath")
+    return tp_path, input_files_path, output_path
+
+def paths_exist(tp_path, input_files_path, output_path):
+    # Check if the automatically determined paths exist
+    return os.path.exists(tp_path) and os.path.exists(input_files_path) and os.path.exists(output_path)
+
 def GetTpPath():
     while True:
         tp_path = input("Please provide a TP path: ")
