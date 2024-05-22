@@ -16,7 +16,7 @@ def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, con
     #Create NPRInputFile.csv
     npr_input_csv_path = os.path.join(output_path, "NPRInputFile.csv")
     print("Creating NPRInputFile.csv file.")
-    cleaned_plist_names_combined = FillNPRInputFile(unique_model_names, test_instances_caught_by_regex, npr_input_csv_path, dont_run_chk)
+    cleaned_plist_names_combined = FillNPRInputFile(unique_model_names, test_instances_caught_by_regex, npr_input_csv_path, dont_run_chk, other_options_values)
 
     #Create PAS_PTD.pup.json
     pup_json_path = os.path.join(output_path, "PAS_PTD.pup.json")
@@ -91,26 +91,35 @@ def FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path, dont_run_chk, oth
                         'EngId': '.',
                         'Encode': encode_value,
                         'ModelName': model_name,
-                        'FullPercentage': full_percentage
+                        'FullPercentage': 0 if dont_run_chk else (full_percentage if full_percentage <= 1 else 0)
                     })
 
     return list(unique_model_names), encode_values
 
-def FillNPRInputFile(unique_model_names, test_instances_caught_by_regex, npr_input_csv_path, dont_run_chk):
+def FillNPRInputFile(unique_model_names, test_instances_caught_by_regex, npr_input_csv_path, dont_run_chk, other_options_values):
     plist_names_combined = set()
 
+    # Check if the length of other_options_values matches the expectation
+    if len(other_options_values) != len(unique_model_names) - 1:
+        print("Warning: The number of entries in other_options_values does not match the expected number based on unique_model_names.")
+    
     with open(npr_input_csv_path, 'w', newline='') as csvfile:
         fieldnames = ['ModelName', 'PlistName', 'Ipname']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        
         writer.writeheader()
 
+        sorted_model_names = sorted(unique_model_names)
+        other_options_values_list = list(other_options_values)
+        model_name_to_option = {model_name: other_options_values_list[i] for i, model_name in enumerate(sorted_model_names[1:])}
+        
         if dont_run_chk is True:
-            for model_name in sorted(unique_model_names):
+            for model_name in sorted_model_names:
                 if model_name.endswith('0'):
-                    plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex]
+                    plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex if test.get("search_or_check") not in other_options_values]
                 else:
-                    plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex if test.get("rule_file") is not None]
+                    # Use the mapped value for search_or_check based on the model_name
+                    search_or_check_value = model_name_to_option[model_name]
+                    plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex if test.get("rule_file") is not None and test.get("search_or_check") == search_or_check_value]
                     
                 plist_names_combined.update(plist_names)
 
@@ -122,14 +131,19 @@ def FillNPRInputFile(unique_model_names, test_instances_caught_by_regex, npr_inp
                         'Ipname': ip_name
                     })
         else:
-            for model_name in sorted(unique_model_names):
+            for model_name in sorted_model_names:
+                plist_names = []
                 if model_name.endswith('0'):
-                    plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex if test.get("rule_file") is not None and test.get("MatchFound") is True]
+                    plist_names = [(test.get("patlist", "MissingPatlist"), test.get("scope", "MissingScope")) for test in test_instances_caught_by_regex if test.get("rule_file") is not None and test.get("search_or_check") not in other_options_values and test.get("MatchFound") is True]
                 elif model_name.endswith('1'):
-                    plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex if test.get("rule_file") is None and test.get("MatchFound") is True]
+                        plist_names = [(test.get("patlist", "MissingPatlist"), test.get("scope", "MissingScope")) for test in test_instances_caught_by_regex if test.get("rule_file") is None and test.get("search_or_check") not in other_options_values and test.get("MatchFound") is True]
                 else:
-                    plist_names = [(test["patlist"], test["scope"]) for test in test_instances_caught_by_regex if test.get("rule_file") is not None]
-
+                    search_or_check_value = model_name_to_option.get(model_name)
+                    if search_or_check_value:
+                        plist_names = [(test.get("patlist", "MissingPatlist"), test.get("scope", "MissingScope")) for test in test_instances_caught_by_regex if test.get("rule_file") is not None and test.get("search_or_check") == search_or_check_value]
+                    else:
+                        print(f"Warning: No search_or_check value mapped for model_name {model_name}.")
+                
                 plist_names_combined.update(plist_names)
 
                 cleaned_plist_names = CleanUpPlistNames(plist_names)
