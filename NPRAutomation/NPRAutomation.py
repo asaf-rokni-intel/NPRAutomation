@@ -32,7 +32,7 @@ if __name__ == "__main__":
         # Verifying inputs:
         json_file_path = FindJsonFile(input_files_path)
         conf_file_path = GetConfFilePath(input_files_path)
-        search_option_value, check_option_value, other_options_values, dont_run_chk, ignore_patterns_with_regexes = CheckConfFile(conf_file_path, json_file_path)
+        search_option_value, check_option_value, other_options_values, dont_run_chk, ignore_patterns_with_regexes, outputs_in_tp = CheckConfFile(tp_path, conf_file_path, json_file_path)
         csv_file_path = TestCsvDataVerification(input_files_path, search_option_value, check_option_value, other_options_values)
         supersede_dir_path = FindSupersedePath(tp_path)
         
@@ -88,7 +88,7 @@ if __name__ == "__main__":
             print()
 
         #Creating output files:
-        log_files_directory = CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path)
+        log_files_directory = CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, outputs_in_tp, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path)
 
         sys.stdout = original_stdout
         sys.stderr = original_stderr

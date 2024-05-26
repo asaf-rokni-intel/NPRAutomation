@@ -7,11 +7,16 @@ from warnings import catch_warnings
 
 # Getting inputs from the user:
 def get_automatic_paths():
-    # Assuming 'tpPath', 'inputFilesPath', and 'outputPath' are relative to the exe's directory
+    # Determine the base path depending on whether the script is frozen (packaged as an exe)
     base_path = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__)
-    tp_path = os.path.join(base_path, "tpPath")
-    input_files_path = os.path.join(base_path, "inputFilesPath")
-    output_path = os.path.join(base_path, "outputPath")
+    
+    # Move up two directories for tp_path
+    tp_path = os.path.abspath(os.path.join(base_path, "..", ".."))
+    
+    # Inputs and Outputs directories are assumed to be in the same directory as the exe
+    input_files_path = os.path.join(base_path, "Inputs")
+    output_path = os.path.join(base_path, "Outputs")
+    
     return tp_path, input_files_path, output_path
 
 def paths_exist(tp_path, input_files_path, output_path):
@@ -110,10 +115,10 @@ def GetConfFilePath(input_files_path):
 
     return conf_file_path
 
-def CheckConfFile(conf_path, json_file_path = None):
+def CheckConfFile(tp_path, conf_path, json_file_path = None):
     try:
         required_parameters = {"LocationCodes", "Encode", "SearchOption", "CheckOption"}
-        allowed_parameters = required_parameters | {"ExcludedPlistsRegexes", "OtherOptions", "BaseNumberLength", "DontRunChk", "IgnorePatternsWithRegexes"}
+        allowed_parameters = required_parameters | {"ExcludedPlistsRegexes", "OtherOptions", "BaseNumberLength", "DontRunChk", "IgnorePatternsWithRegexes", "OutputsPathInTP"}
         errors = []
 
         # Get the path to the 'BLLEncoder.txt' file
@@ -211,6 +216,21 @@ def CheckConfFile(conf_path, json_file_path = None):
                         ignore_patterns_with_regexes.add(value)
                     else:
                         errors.append(f"IgnorePatternsWithRegexes' value {value} is not a legitimate regex.\nPlease provide valid regexes only.")
+                        
+            if parameter == "OutputsPathInTP":
+                if len(values) != 1:
+                    errors.append(f"Error in line {line_number}: OutputsPathInTP should have exactly 1 value.")
+                    continue  # Skip further checks if the number of values is incorrect
+
+                # Normalize the path to ensure compatibility with forward/backward slashes
+                normalized_value = os.path.normpath(values[0])
+
+                # Construct the full path by joining tp_path with the normalized OutputsPathInTP value
+                outputs_in_tp = os.path.normpath(os.path.join(tp_path, normalized_value))
+
+                # Check if the constructed path exists
+                if not os.path.exists(outputs_in_tp):
+                    errors.append(f"Error in line {line_number}: The path '{outputs_in_tp}' does not exist.")
                     
             # Check BaseNumberLength only if json_file_path is not None
             if json_file_path is not None and parameter == "BaseNumberLength":
@@ -233,7 +253,7 @@ def CheckConfFile(conf_path, json_file_path = None):
                 print(error)
             sys.exit(1)
 
-        return search_option_value, check_option_value, other_options_values, dont_run_chk, ignore_patterns_with_regexes
+        return search_option_value, check_option_value, other_options_values, dont_run_chk, ignore_patterns_with_regexes, outputs_in_tp
     except Exception as error:
         print("An exception occurred in CheckConf:", error)
     

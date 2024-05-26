@@ -7,19 +7,19 @@ import shutil
 import sys
 from ExtractingData import *
 
-def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path):
+def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, outputs_in_tp, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path):
     #Create NPRCriteriaFile.csv
-    npr_criteria_csv_path = os.path.join(output_path, "NPRCriteriaFile.csv")
+    npr_criteria_csv_path = os.path.join(outputs_in_tp, "NPRCriteriaFile.csv")
     print("Creating NPRCriteriaFile.csv file.")
     unique_model_names, encode_values = FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path, dont_run_chk, other_options_values)
 
     #Create NPRInputFile.csv
-    npr_input_csv_path = os.path.join(output_path, "NPRInputFile.csv")
+    npr_input_csv_path = os.path.join(outputs_in_tp, "NPRInputFile.csv")
     print("Creating NPRInputFile.csv file.")
     cleaned_plist_names_combined = FillNPRInputFile(unique_model_names, test_instances_caught_by_regex, npr_input_csv_path, dont_run_chk, other_options_values)
 
     #Create PAS_PTD.pup.json
-    pup_json_path = os.path.join(output_path, "PAS_PTD.pup.json")
+    pup_json_path = os.path.join(outputs_in_tp, "PAS_PTD.pup.json")
     print("Creating PAS_PTD.pup.json file.")
     #List of all the tests that will go into the PAS_PTD.pup.json file
     pas_ptd_complete_tests_list = []
