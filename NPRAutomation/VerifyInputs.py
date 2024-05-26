@@ -117,8 +117,8 @@ def GetConfFilePath(input_files_path):
 
 def CheckConfFile(tp_path, conf_path, json_file_path = None):
     try:
-        required_parameters = {"LocationCodes", "Encode", "SearchOption", "CheckOption"}
-        allowed_parameters = required_parameters | {"ExcludedPlistsRegexes", "OtherOptions", "BaseNumberLength", "DontRunChk", "IgnorePatternsWithRegexes", "OutputsPathInTP"}
+        required_parameters = {"LocationCodes", "Encode", "SearchOption", "CheckOption", "OutputsPathInTP"}
+        allowed_parameters = required_parameters | {"ExcludedPlistsRegexes", "OtherOptions", "BaseNumberLength", "DontRunChk", "IgnorePatternsWithRegexes"}
         errors = []
 
         # Get the path to the 'BLLEncoder.txt' file
