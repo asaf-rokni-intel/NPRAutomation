@@ -297,6 +297,7 @@ def FindAndReplaceWithSupersedePlists(test, plist_files, supersede_dir_path):
     return superseded_plist_files
 
 def AddRuleFileToTestInstances(test_instances_caught_by_regex, input_files_path, other_options_values):
+    removed_tests = set()
     # Iterate over a copy of the list to safely modify the original list
     for test in test_instances_caught_by_regex[:]:
         rule_file = LocateRuleFile(test["patlist"], input_files_path)
@@ -305,6 +306,8 @@ def AddRuleFileToTestInstances(test_instances_caught_by_regex, input_files_path,
         if test.get("search_or_check") in other_options_values and not test.get("rule_file"):
             print(f"The test instance {test.get('test_name', 'Unknown')} was removed from the tests list because it was in OtherOptions flow ({test.get('search_or_check')}) and had no rule.")
             test_instances_caught_by_regex.remove(test)
+            removed_tests.add(test)
+    return removed_tests
 
 def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option_value, other_options_values, ignore_patterns_with_regexes, supersede_dir_path):
     errors = []

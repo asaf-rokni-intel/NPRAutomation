@@ -51,7 +51,7 @@ if __name__ == "__main__":
         tests_with_patlist = ExtractTestsWithPatlist(mtpl_files_with_mconfig, uservar_file_path)
         filtered_tests, excluded_tests = RemoveExcludedPatlists(tests_with_patlist, conf_file_path)
         test_instances_caught_by_regex, test_instances_not_caught = CatchTestInstancesByRegex(csv_file_path, filtered_tests)    
-        AddRuleFileToTestInstances(test_instances_caught_by_regex, input_files_path, other_options_values)
+        removed_tests = AddRuleFileToTestInstances(test_instances_caught_by_regex, input_files_path, other_options_values)
         plist_found_in_files = ProcessPlistFiles(test_instances_caught_by_regex, input_files_path, search_option_value, check_option_value, other_options_values, ignore_patterns_with_regexes, supersede_dir_path)
         
         print()
