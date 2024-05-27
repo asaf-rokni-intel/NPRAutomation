@@ -20,9 +20,24 @@ def get_automatic_paths():
     return tp_path, input_files_path, output_path
 
 def paths_exist(tp_path, input_files_path, output_path):
-    # Check if the automatically determined paths exist
-    return os.path.exists(tp_path) and os.path.exists(input_files_path) and os.path.exists(output_path)
+    # Only proceed if all paths are provided
+    if tp_path is not None and input_files_path is not None and output_path is not None:
+        print(f"Checking paths...\nTP Path: {tp_path}\nInputs: {input_files_path}\nOutputs: {output_path}")
+        return os.path.exists(tp_path) and os.path.exists(input_files_path) and os.path.exists(output_path)
+    else:
+        # If any path is None, return False to indicate paths are not set
+        return False
 
+def ensure_output_path_exists_or_create_it(output_path):
+    if not os.path.exists(output_path):
+        parent_dir = os.path.dirname(output_path)
+        if os.path.exists(parent_dir):
+            print(f"The directory '{output_path}' does not exist, but its parent directory does. Creating '{output_path}'...")
+            os.makedirs(output_path)
+            print(f"Directory '{output_path}' created successfully.")
+        else:
+            print(f"Both the directory '{output_path}' and its parent directory do not exist. Unable to create '{output_path}'.")
+            
 def GetTpPath():
     while True:
         tp_path = input("Please provide a TP path: ")

@@ -3,12 +3,17 @@ from ExtractingData import *
 from CreatingOutputFiles import *
 
 if __name__ == "__main__":
-    
+    # Initialize paths with None
+    tp_path = None
+    input_files_path = None
+    output_path = None
+
     # Check if the script was executed with command-line arguments
     if len(sys.argv) == 4:  # Expecting 3 arguments: tp_path, input_files_path, output_path
         tp_path = sys.argv[1]
         input_files_path = sys.argv[2]
         output_path = sys.argv[3]
+        ensure_output_path_exists_or_create_it(output_path)
         
     # Verify the existence of the paths provided via command-line arguments
     if not paths_exist(tp_path, input_files_path, output_path):
@@ -23,6 +28,7 @@ if __name__ == "__main__":
             input_files_path = GetInputFilesPath()
             output_path = GetOutputPath()
         elif not getattr(sys, 'frozen', False):  # Running from IDE or a normal Python process
+            print("Executing from an IDE or normal Python process.")
             tp_path = GetTpPath()
             input_files_path = GetInputFilesPath()
             output_path = GetOutputPath()
