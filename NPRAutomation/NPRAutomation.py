@@ -4,19 +4,28 @@ from CreatingOutputFiles import *
 
 if __name__ == "__main__":
     
-    # Attempt to get the paths automatically
-    tp_path, input_files_path, output_path = get_automatic_paths()
+    # Check if the script was executed with command-line arguments
+    if len(sys.argv) == 4:  # Expecting 3 arguments: tp_path, input_files_path, output_path
+        tp_path = sys.argv[1]
+        input_files_path = sys.argv[2]
+        output_path = sys.argv[3]
+        
+    # Verify the existence of the paths provided via command-line arguments
+    if not paths_exist(tp_path, input_files_path, output_path):
+        print("One or more paths provided do not exist. Attempting to get paths automatically.")  
+        # Attempt to get the paths automatically
+        tp_path, input_files_path, output_path = get_automatic_paths()
 
-    # If running as an exe and the paths do not exist, prompt the user for input
-    if getattr(sys, 'frozen', False) and not paths_exist(tp_path, input_files_path, output_path):
-        print("Could not locate required paths automatically. Please enter them manually.")
-        tp_path = GetTpPath()
-        input_files_path = GetInputFilesPath()
-        output_path = GetOutputPath()
-    elif not getattr(sys, 'frozen', False):  # Running from IDE or a normal Python process
-        tp_path = GetTpPath()
-        input_files_path = GetInputFilesPath()
-        output_path = GetOutputPath()
+        # If running as an exe and the paths do not exist, prompt the user for input
+        if getattr(sys, 'frozen', False) and not paths_exist(tp_path, input_files_path, output_path):
+            print("Could not locate required paths automatically. Please enter them manually.")
+            tp_path = GetTpPath()
+            input_files_path = GetInputFilesPath()
+            output_path = GetOutputPath()
+        elif not getattr(sys, 'frozen', False):  # Running from IDE or a normal Python process
+            tp_path = GetTpPath()
+            input_files_path = GetInputFilesPath()
+            output_path = GetOutputPath()
 
     log_file_path = os.path.join(output_path, "log.txt")
     
