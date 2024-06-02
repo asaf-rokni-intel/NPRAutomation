@@ -396,10 +396,10 @@ def CreateBasicStatsFile(log_files_directory, test_instances_caught_by_regex, js
                                 test_impacted_by = None
                         break
 
-            reduction_rate = (removed_patterns / total_patterns) * 100 if total_patterns > 0 else 0
-            executed_patterns = total_patterns - removed_patterns
+            reduction_rate = (test.get("patterns_to_disable") / total_patterns) * 100 if total_patterns > 0 else 0
+            executed_patterns = total_patterns - test.get("patterns_to_disable")
 
-            csv_writer.writerow([patlist, functionality, total_patterns, removed_patterns, executed_patterns, reduction_rate, test_impacted_by, comment])
+            csv_writer.writerow([patlist, functionality, total_patterns, test.get("patterns_to_disable"), executed_patterns, reduction_rate, test_impacted_by, comment])
 
     print(f"BasicStats CSV file created at {csv_file_path}")
    
