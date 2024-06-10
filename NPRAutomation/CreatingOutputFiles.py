@@ -399,7 +399,7 @@ def CreateBasicStatsFile(log_files_directory, test_instances_caught_by_regex, js
             reduction_rate = (len(test.get("patterns_to_disable")) / total_patterns) * 100 if total_patterns > 0 else 0
             executed_patterns = total_patterns - len(test.get("patterns_to_disable"))
             test_name = test.get("test_name")
-            module_name = test.get("mtpl_file")
+            module_name = os.path.splitext(os.path.basename(test.get("mtpl_file")))[0]
 
             csv_writer.writerow([module_name, test_name, patlist, functionality, total_patterns, len(test.get("patterns_to_disable")), executed_patterns, reduction_rate, test_impacted_by, comment])
 
