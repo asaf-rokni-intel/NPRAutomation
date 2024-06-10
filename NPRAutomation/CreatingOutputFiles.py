@@ -345,7 +345,7 @@ def CreateBasicStatsFile(log_files_directory, test_instances_caught_by_regex, js
     with open(csv_file_path, mode='w', newline='') as csv_file:
         csv_writer = csv.writer(csv_file)
 
-        header_row = ['Patlist', 'Monitor/Short', 'Total Patterns', 'Removed Patterns', 'Executed Patterns', 'Reduction Rate (%)', 'Test Impacted By', 'Comments']
+        header_row = ['Module Name', 'Test Name', 'Patlist', 'Monitor/Short', 'Total Patterns', 'Removed Patterns', 'Executed Patterns', 'Reduction Rate (%)', 'Test Impacted By', 'Comments']
         csv_writer.writerow(header_row)
 
         patlist_data = GetPatlistDataFromJson(json_output_file)
@@ -398,8 +398,10 @@ def CreateBasicStatsFile(log_files_directory, test_instances_caught_by_regex, js
 
             reduction_rate = (len(test.get("patterns_to_disable")) / total_patterns) * 100 if total_patterns > 0 else 0
             executed_patterns = total_patterns - len(test.get("patterns_to_disable"))
+            test_name = test.get("test_name")
+            module_name = test.get("mtpl_file")
 
-            csv_writer.writerow([patlist, functionality, total_patterns, len(test.get("patterns_to_disable")), executed_patterns, reduction_rate, test_impacted_by, comment])
+            csv_writer.writerow([module_name, test_name, patlist, functionality, total_patterns, len(test.get("patterns_to_disable")), executed_patterns, reduction_rate, test_impacted_by, comment])
 
     print(f"BasicStats CSV file created at {csv_file_path}")
    
