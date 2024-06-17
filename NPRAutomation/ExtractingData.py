@@ -360,7 +360,7 @@ def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option
             errors.append((f"The plist wasn't found in any of the files in the mconfig file for test: {test_name}, patlist: {patlist}, mtpl_file: {mtpl_file}, mconfig_file: {mconfig_file}"))
 
         if test["total_num_of_patterns_in_plist"] == len(test["patterns_to_disable"]):
-            test["patterns_to_disable"].pop()
+            test["patterns_to_disable"].pop(0) #Remove the first pattern in the list
             
     if errors:
         print("\nErrors with plists:")
@@ -487,8 +487,10 @@ def RemoveEnabledContentFromPatterns(test_name, test, input_files_path):
         if len(patterns) == 1:
             patterns.pop()
             return [], [f"No rule file found for test: {test_name} with patlist {patlist}. Only 1 pattern was in the patlist, so it was not removed."], patterns
-        else:
-            return patterns, [f"No rule file found for test: {test_name} with patlist {patlist}"], []
+        elif len(test["patterns"]) > 1:
+            patterns_to_keep = [test["patterns"][0]]  # Keep the first pattern
+            patterns = test["patterns"][1:]  # Disable the rest
+            return patterns, [f"No rule file found for test: {test_name} with patlist {patlist}"], patterns_to_keep
 
     if isinstance(rule_files, list) and len(rule_files) > 1:
         error_msg = f"Multiple rule files found for test: {test_name} with patlist {patlist}. Only one rule file is allowed per Plist."
@@ -570,8 +572,6 @@ def RemoveNotEnabledContentFromPatterns(test_name, test, input_files_path, searc
                 number_to_remove = parts[1]
                 new_patterns.extend(pattern for pattern in patterns if number_to_remove in pattern)
                 total_numbers_to_remove.append(number_to_remove)
-                #patterns_to_keep_temp = [pattern for pattern in patterns if number_to_remove not in pattern]
-                #patterns_to_keep.append(patterns_to_keep_temp)
             elif len(parts) == 0:
                 continue
             else:
