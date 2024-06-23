@@ -106,7 +106,7 @@ def ExtractTestsWithPatlist(mtpl_files_with_mconfig, uservar_file_path):
                         if patlist is not None and not bypass_port:
                             tests_with_patlist.append((test_name, patlist, scoreboard_base_number, pattern_name_map, template, mtpl_file, mconfig_file))
                             patlist = None
-                if inside_test and "BypassPort" in line and "=" in line:
+                if inside_test and "BypassPort" in line and "=" in line and "#" not in line:
                     bypass_port_value = line.split("=")[1].split(";")[0].strip()
                     if bypass_port_value == "1":
                         bypass_port = True
