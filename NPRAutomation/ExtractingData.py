@@ -110,6 +110,7 @@ def ExtractTestsWithPatlist(mtpl_files_with_mconfig, uservar_file_path):
                     bypass_port_value = line.split("=")[1].split(";")[0].strip()
                     if bypass_port_value == "1":
                         bypass_port = True
+                        print(f"Test {test_name} has a line with 'BypassPort = 1' and so it is ignored.")
                 if inside_test and "TrialTest" in line and test_name in line:
                     template = line.split()[1]
                 if "Patlist" in line and "=" in line:
