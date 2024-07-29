@@ -396,8 +396,15 @@ def CreateBasicStatsFile(log_files_directory, test_instances_caught_by_regex, js
                                 test_impacted_by = None
                         break
 
-            reduction_rate = (len(test.get("patterns_to_disable")) / total_patterns) * 100 if total_patterns > 0 else 0
-            executed_patterns = total_patterns - len(test.get("patterns_to_disable"))
+            if "patterns_to_disable" in test:
+                patterns_to_disable_in_test = test.get("patterns_to_disable")
+            elif "patterns_to_remove_ab_list" in test:
+                patterns_to_disable_in_test = test.get("patterns_to_remove_ab_list")
+            else:
+                patterns_to_disable_in_test = []
+
+            reduction_rate = (len(patterns_to_disable_in_test) / total_patterns) * 100 if total_patterns > 0 else 0
+            executed_patterns = total_patterns - len(patterns_to_disable_in_test)
             test_name = test.get("test_name")
             module_name = os.path.splitext(os.path.basename(test.get("mtpl_file")))[0]
 
@@ -564,6 +571,7 @@ def CleanPatlistName(patlist_name):
         return patlist_name
 
 def UpdateOutputData(output_data, ab_list_tests, json_output_file, pas_ptd_complete_tests_list):
+    all_tests = []
     for socket_name, socket_tests in ab_list_tests.items():
         for process_type in output_data.get("ProcessTypes", []):
             if process_type.get("Name") == socket_name:
@@ -573,50 +581,44 @@ def UpdateOutputData(output_data, ab_list_tests, json_output_file, pas_ptd_compl
                     test_scope = test['scope']
                     matched = False
 
-                    # Assuming that "PerPatlistPatternsToDisable" is a list of dictionaries
                     for per_patlist in process_type.get("PerPatlistPatternsToDisable", []):
                         patlist = per_patlist.get("Patlist", "")
-
-                        # Compare test["scope"] + "::" + test["patlist"] with patlist
                         if test_scope + "::" + test_patlist == patlist:
-                            index = process_type.get("PerPatlistPatternsToDisable", []).index(per_patlist)
-                            UpdatePerPatlist(json_output_file, process_type, test, "Monitor", index)
+                            all_tests.append((test, process_type, process_type.get("PerPatlistPatternsToDisable", []).index(per_patlist), "Monitor"))
                             matched = True
                             break
 
                     if not matched:
-                        index = len(process_type.get("PerPatlistPatternsToDisable", []))
-                        UpdatePerPatlist(json_output_file, process_type, test, "Short", index)
+                        all_tests.append((test, process_type, len(process_type.get("PerPatlistPatternsToDisable", [])), "Short"))
 
-def UpdatePerPatlist(json_output_file, process_type, test, functionality, index):
-    # Change the Functionality of the existing "Short" to "Monitor" if already exists.
-    if functionality == "Monitor":
-        process_type["PerPatlistPatternsToDisable"][index]["Functionality"] = "Monitor"
-        new_per_patlist = {
-            "Patlist": test['scope'] + "::" + test["patlist"],
-            "Functionality": "Short",
-            "PatternsToDisable": [{"Pattern": pattern} for pattern in test["patterns_to_remove_ab_list"]]
-        }
-        
-    else:
-        # Create a new per_patlist based on the provided functionality
-        new_per_patlist = {
-            "Patlist": test['scope'] + "::" + test["patlist"],
-            "Functionality": functionality,
-            "PatternsToDisable": [{"Pattern": pattern} for pattern in test["patterns_to_remove_ab_list"]]
-            }
-        
-    # Insert the new_per_patlist right above the original one
-    process_type["PerPatlistPatternsToDisable"].insert(index + 1, new_per_patlist)
+    # Update all tests with their respective functionalities in one call
+    UpdatePerPatlist(json_output_file, all_tests)
 
+def UpdatePerPatlist(json_output_file, tests):
     # Load the existing JSON data from the output file
     with open(json_output_file, 'r') as output_file:
         output_data = json.load(output_file)
 
-    # Modify the ProcessTypes section in the loaded JSON data
-    for pt in output_data.get("ProcessTypes", []):
-        if pt.get("Name") == process_type["Name"]:
-            pt["PerPatlistPatternsToDisable"] = process_type["PerPatlistPatternsToDisable"]
+    # Process each test
+    for test, process_type, index, functionality in tests:
+        new_per_patlist = {
+            "Patlist": test['scope'] + "::" + test["patlist"],
+            "Functionality": functionality,
+            "PatternsToDisable": [{"Pattern": pattern} for pattern in test["patterns_to_remove_ab_list"]]
+        }
+
+        if functionality == "Monitor":
+            process_type["PerPatlistPatternsToDisable"][index]["Functionality"] = "Monitor"
+            process_type["PerPatlistPatternsToDisable"].insert(index + 1, new_per_patlist)
+        else:
+            process_type["PerPatlistPatternsToDisable"].insert(index, new_per_patlist)
+
+        # Update the process_type in output_data
+        for pt in output_data.get("ProcessTypes", []):
+            if pt["Name"] == process_type["Name"]:
+                pt_index = output_data["ProcessTypes"].index(pt)
+                output_data["ProcessTypes"][pt_index] = process_type
+                break
 
     # Write the updated data back to the JSON output file
     with open(json_output_file, 'w') as output_file:
