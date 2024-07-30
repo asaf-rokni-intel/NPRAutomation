@@ -614,6 +614,7 @@ def UpdatePerPatlist(json_output_file, tests):
 
         if functionality == "Monitor":
             process_type["PerPatlistPatternsToDisable"][index]["Functionality"] = "Monitor"
+            new_per_patlist["Functionality"] = "Short"
             process_type["PerPatlistPatternsToDisable"].insert(index + 1, new_per_patlist)
         else:
             process_type["PerPatlistPatternsToDisable"].insert(index, new_per_patlist)
