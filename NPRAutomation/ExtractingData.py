@@ -367,7 +367,7 @@ def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option
         for error in errors:
             print(error)
 
-    return plist_found_in_files
+    return sorted(plist_found_in_files)
 
 def FindTestWithMatchingPatlist(test, tests, search_option_value, check_option_value):  
     possible_patlists = GeneratePossiblePatlists(test["patlist"], search_option_value, check_option_value)

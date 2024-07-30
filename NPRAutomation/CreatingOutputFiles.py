@@ -32,6 +32,11 @@ def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, out
     print("Creating FlatFile.csv file.")
     FillFlatFile(pas_ptd_complete_tests_list, flat_file_csv_path)
 
+    # Create PatternsLeftFile.csv
+    patterns_left_file_path = os.path.join(output_path, "PatternsLeftFile.csv")
+    print("Creating PatternsLeftFile.csv file.")
+    FillPatternsLeftFile(test_instances_caught_by_regex, patterns_left_file_path)
+
     #Create SourceFiles directory
     source_files_directory = os.path.join(output_path, "SourceFiles")
     if not os.path.exists(source_files_directory):
@@ -667,3 +672,16 @@ def FillFlatFile(pas_ptd_complete_tests_list, flat_file_csv_path):
                         existing_line[1] = 'PUP'  # Update type to 'PUP' if pattern is already listed under 'NPR'
 
             writer.writerows(output_lines)
+
+def FillPatternsLeftFile(test_instances, output_csv_path):
+    with open(output_csv_path, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['Test Name', 'Patlist Name', 'Patterns Strings'])
+
+        for test in test_instances:
+            test_name = test.get("test_name", "Unknown Test")
+            patlist_name = test.get("patlist", "Unknown Patlist")
+            patterns_to_keep = test.get("patterns_to_keep", []) + test.get("patterns_to_keep_from_npr", [])
+
+            for pattern in patterns_to_keep:
+                writer.writerow([test_name, patlist_name, pattern])
