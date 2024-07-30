@@ -69,8 +69,8 @@ def FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path, dont_run_chk, oth
         
         writer.writeheader()
         
-        for encode_value in encode_values:
-            for location_code in location_codes:
+        for encode_value in sorted(encode_values):
+            for location_code in sorted(location_codes):
                 if dont_run_chk is True:
                     range_for_percentages = 1
                 else:
@@ -94,7 +94,7 @@ def FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path, dont_run_chk, oth
                         'FullPercentage': 0 if dont_run_chk else (full_percentage if full_percentage <= 1 else 0)
                     })
 
-    return list(unique_model_names), encode_values
+    return sorted(unique_model_names), encode_values
 
 def FillNPRInputFile(unique_model_names, test_instances_caught_by_regex, npr_input_csv_path, dont_run_chk, other_options_values):
     plist_names_combined = set()
@@ -153,8 +153,7 @@ def FillNPRInputFile(unique_model_names, test_instances_caught_by_regex, npr_inp
                         'PlistName': plist_name,
                         'Ipname': ip_name
                     })
-
-    cleaned_plist_names_combined = CleanUpPlistNames(plist_names_combined)
+    cleaned_plist_names_combined = CleanUpPlistNames(sorted(plist_names_combined))
     return cleaned_plist_names_combined
 
 def CleanUpPlistNames(plist_names):
@@ -408,7 +407,7 @@ def CreateBasicStatsFile(log_files_directory, test_instances_caught_by_regex, js
             test_name = test.get("test_name")
             module_name = os.path.splitext(os.path.basename(test.get("mtpl_file")))[0]
 
-            csv_writer.writerow([module_name, test_name, patlist, functionality, total_patterns, len(test.get("patterns_to_disable")), executed_patterns, reduction_rate, test_impacted_by, comment])
+            csv_writer.writerow([module_name, test_name, patlist, functionality, total_patterns, len(patterns_to_disable_in_test), executed_patterns, reduction_rate, test_impacted_by, comment])
 
     print(f"BasicStats CSV file created at {csv_file_path}")
    
@@ -596,6 +595,7 @@ def UpdateOutputData(output_data, ab_list_tests, json_output_file, pas_ptd_compl
 
 def UpdatePerPatlist(json_output_file, tests):
     # Load the existing JSON data from the output file
+    tests.sort(key=lambda x: x[0]['test_name'])
     with open(json_output_file, 'r') as output_file:
         output_data = json.load(output_file)
 
@@ -625,17 +625,22 @@ def UpdatePerPatlist(json_output_file, tests):
         json.dump(output_data, output_file, indent=4)
         
 def FillFlatFile(pas_ptd_complete_tests_list, flat_file_csv_path):
-    unique_patlists = set()
+    # Use a list to maintain order and a set for quick lookup
+    unique_patlists = []
+    unique_patlists_set = set()
     unique_tests = []
 
+    # Ensure that each test is added only once and maintain insertion order
     for test_tuple in pas_ptd_complete_tests_list:
         test = dict(test_tuple)
         patlist_name = test.get("patlist", "")
 
-        if patlist_name not in unique_patlists:
+        if patlist_name not in unique_patlists_set:
             unique_tests.append(test)
-            unique_patlists.add(patlist_name)
+            unique_patlists.append(patlist_name)
+            unique_patlists_set.add(patlist_name)
 
+    # Write to CSV, ensuring the order of patlists is maintained as collected
     with open(flat_file_csv_path, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['Patlist Name', 'Type', 'Patterns Strings'])
@@ -643,20 +648,22 @@ def FillFlatFile(pas_ptd_complete_tests_list, flat_file_csv_path):
         for test in unique_tests:
             patlist_name = test.get("patlist", "")
             npr_patterns = test.get("patterns_to_keep_from_npr", [])
-            ab_patterns = test.get("patterns_to_keep_from_ab_list", "")
+            ab_patterns = test.get("patterns_to_keep_from_ab_list", [])
 
             output_lines = []
 
-            if not npr_patterns:  # Check if npr_patterns is empty
+            # Check if npr_patterns is empty and handle accordingly
+            if not npr_patterns:  # If no NPR patterns, only AB patterns are considered
                 for pattern in ab_patterns:
                     output_lines.append([patlist_name, 'PUP', pattern])
             else:
                 for pattern in npr_patterns:
                     output_lines.append([patlist_name, 'NPR', pattern])
 
+                # Check for existing patterns in AB list to update the type if necessary
                 for pattern in ab_patterns:
                     existing_line = next((line for line in output_lines if line[2] == pattern), None)
                     if existing_line:
-                        existing_line[1] = 'PUP'
+                        existing_line[1] = 'PUP'  # Update type to 'PUP' if pattern is already listed under 'NPR'
 
             writer.writerows(output_lines)

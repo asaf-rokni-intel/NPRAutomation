@@ -268,7 +268,7 @@ def CheckConfFile(tp_path, conf_path, json_file_path = None):
                 print(error)
             sys.exit(1)
 
-        return search_option_value, check_option_value, other_options_values, dont_run_chk, ignore_patterns_with_regexes, outputs_in_tp
+        return search_option_value, check_option_value, sorted(other_options_values), dont_run_chk, ignore_patterns_with_regexes, outputs_in_tp
     except Exception as error:
         print("An exception occurred in CheckConf:", error)
     
