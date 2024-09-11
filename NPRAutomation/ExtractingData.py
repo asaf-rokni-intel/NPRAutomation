@@ -112,7 +112,7 @@ def ExtractTestsWithPatlist(mtpl_files_with_mconfig, uservar_file_path):
                         bypass_port = True
                 if inside_test and "TrialTest" in line and test_name in line:
                     template = line.split()[1]
-                if "Patlist" in line and "=" in line:
+                if re.search(r"Patlist\s*=", line):
                     patlist = line.split("=")[1].split(";")[0].strip().strip('"')
                 if "ScoreboardBaseNumber" in line and "=" in line:
                     scoreboard_base_number = line.split("=")[1].split(";")[0].strip().strip('"')
