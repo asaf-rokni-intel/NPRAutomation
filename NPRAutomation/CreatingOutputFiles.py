@@ -520,8 +520,21 @@ def UpdatePASPTDFile(json_input_file, json_output_file, test_instances_caught_by
                 
                 # Copy the "patterns" variable into "patterns_to_remove_ab_list" and create an empty list for patterns to keep from ab_list
                 if "patterns" in test:
-                    test["patterns_to_remove_ab_list"] = test["patterns"]
-                    test["patterns_to_keep_from_ab_list"] = []
+                    test["patterns_to_remove_ab_list"] = []
+                    added_patterns = set()  # Keep track of patterns already added
+
+                    for pattern_info in test["patterns"]:
+                        if pattern_info not in added_patterns:  # Check if pattern has not been added already
+                            pattern_entry = {"Pattern": pattern_info}
+                            
+                            # Only add "Occurrence" if there are occurrences in patterns_with_multiple_occurrences
+                            if pattern_info in test.get("patterns_with_multiple_occurrences", {}):
+                                occurrences = test["patterns_with_multiple_occurrences"][pattern_info]
+                                if occurrences:  # Only add if there are occurrences
+                                    pattern_entry["Occurrence"] = ",".join(map(str, occurrences))
+
+                            test["patterns_to_remove_ab_list"].append(pattern_entry)
+                            added_patterns.add(pattern_info)  # Mark pattern as added
             
         for test in ab_list_tests[socket_name]:
             print(f"Test Name: {test['test_name']}")
@@ -642,7 +655,13 @@ def UpdatePerPatlist(json_output_file, tests):
         new_per_patlist = {
             "Patlist": test['scope'] + "::" + test["patlist"],
             "Functionality": functionality,
-            "PatternsToDisable": [{"Pattern": pattern} for pattern in test["patterns_to_remove_ab_list"]]
+            "PatternsToDisable": [
+                {
+                    "Pattern": pattern["Pattern"],
+                    **({"Occurrence": pattern["Occurrence"]} if "Occurrence" in pattern and pattern["Occurrence"] else {})
+                }
+                for pattern in test["patterns_to_remove_ab_list"]
+            ]
         }
 
         # Check if the entry already exists with "Short" functionality
@@ -661,11 +680,9 @@ def UpdatePerPatlist(json_output_file, tests):
         # Update the process_type in output_data
         for pt in output_data.get("ProcessTypes", []):
             if pt["Name"] == process_type["Name"]:
-                pt_index = output_data["ProcessTypes"].index(pt)
-                output_data["ProcessTypes"][pt_index] = process_type
-                break
+                pt["PerPatlistPatternsToDisable"] = process_type["PerPatlistPatternsToDisable"]
 
-    # Write the updated data back to the JSON output file
+    # Write the modified data back to the output file
     with open(json_output_file, 'w') as output_file:
         json.dump(output_data, output_file, indent=4)
         
