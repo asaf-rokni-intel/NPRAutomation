@@ -402,19 +402,19 @@ def CreateBasicStatsFile(log_files_directory, test_instances_caught_by_regex, js
                                 test_impacted_by = None
                         break
 
-            if "patterns_to_disable" in test:
-                patterns_to_disable_in_test = test.get("patterns_to_disable")
-            elif "patterns_to_remove_ab_list" in test:
-                patterns_to_disable_in_test = test.get("patterns_to_remove_ab_list")
-            else:
-                patterns_to_disable_in_test = []
+            # if "patterns_to_disable" in test:
+            #     patterns_to_disable_in_test = test.get("patterns_to_disable")
+            # elif "patterns_to_remove_ab_list" in test:
+            #     patterns_to_disable_in_test = test.get("patterns_to_remove_ab_list")
+            # else:
+            #     patterns_to_disable_in_test = []
 
-            reduction_rate = (len(patterns_to_disable_in_test) / total_patterns) * 100 if total_patterns > 0 else 0
-            executed_patterns = total_patterns - len(patterns_to_disable_in_test)
+            reduction_rate = (removed_patterns / total_patterns) * 100 if total_patterns > 0 else 0
+            executed_patterns = total_patterns - removed_patterns
             test_name = test.get("test_name")
             module_name = os.path.splitext(os.path.basename(test.get("mtpl_file")))[0]
 
-            csv_writer.writerow([module_name, test_name, patlist, functionality, total_patterns, len(patterns_to_disable_in_test), executed_patterns, reduction_rate, test_impacted_by, comment])
+            csv_writer.writerow([module_name, test_name, patlist, functionality, total_patterns, removed_patterns, executed_patterns, reduction_rate, test_impacted_by, comment])
 
     print(f"BasicStats CSV file created at {csv_file_path}")
    
