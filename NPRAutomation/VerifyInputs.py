@@ -344,6 +344,7 @@ def VerifyCsvData(csv_path, search_option_value, check_option_value, other_optio
         
         return errors
     
+#AB_List file is the json file.
 def FindJsonFile(input_files_path):
     files = os.listdir(input_files_path)
     for file in files:

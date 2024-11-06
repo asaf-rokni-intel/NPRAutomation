@@ -24,6 +24,8 @@ def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, out
     #List of all the tests that will go into the PAS_PTD.pup.json file
     pas_ptd_complete_tests_list = []
     FillPASPTDFile(pup_json_path, encode_values, cleaned_plist_names_combined, test_instances_caught_by_regex, pas_ptd_complete_tests_list, dont_run_chk)
+
+    #If AB_LIST file exists, update the file
     if json_file_path is not None:
         UpdatePASPTDFile(json_file_path, pup_json_path, test_instances_caught_by_regex, test_instances_not_caught, conf_file_path, pas_ptd_complete_tests_list, ignore_patterns_with_regexes, supersede_dir_path)
         
@@ -598,6 +600,37 @@ def UpdateOutputData(output_data, ab_list_tests, json_output_file, pas_ptd_compl
     # Update all tests with their respective functionalities in one call
     UpdatePerPatlist(json_output_file, all_tests)
 
+def CleanPatlistName(patlist_name):
+    if "::" in patlist_name:
+        _, right_part = patlist_name.split("::", 1)
+        return right_part
+    else:
+        return patlist_name
+
+def UpdateOutputData(output_data, ab_list_tests, json_output_file, pas_ptd_complete_tests_list):
+    all_tests = []
+    for socket_name, socket_tests in ab_list_tests.items():
+        for process_type in output_data.get("ProcessTypes", []):
+            if process_type.get("Name") == socket_name:
+                for test in socket_tests:
+                    pas_ptd_complete_tests_list.append(test)
+                    test_patlist = test['patlist']
+                    test_scope = test['scope']
+                    matched = False
+
+                    for per_patlist in process_type.get("PerPatlistPatternsToDisable", []):
+                        patlist = per_patlist.get("Patlist", "")
+                        if test_scope + "::" + test_patlist == patlist:
+                            all_tests.append((test, process_type, process_type.get("PerPatlistPatternsToDisable", []).index(per_patlist), "Monitor"))
+                            matched = True
+                            break
+
+                    if not matched:
+                        all_tests.append((test, process_type, len(process_type.get("PerPatlistPatternsToDisable", [])), "Short"))
+
+    # Update all tests with their respective functionalities in one call
+    UpdatePerPatlist(json_output_file, all_tests)
+
 def UpdatePerPatlist(json_output_file, tests):
     # Load the existing JSON data from the output file
     tests.sort(key=lambda x: x[0]['test_name'])
@@ -612,11 +645,17 @@ def UpdatePerPatlist(json_output_file, tests):
             "PatternsToDisable": [{"Pattern": pattern} for pattern in test["patterns_to_remove_ab_list"]]
         }
 
-        if functionality == "Monitor":
-            process_type["PerPatlistPatternsToDisable"][index]["Functionality"] = "Monitor"
+        # Check if the entry already exists with "Short" functionality
+        existing_entry = next((entry for entry in process_type["PerPatlistPatternsToDisable"] if entry["Patlist"] == new_per_patlist["Patlist"] and entry["Functionality"] == "Short"), None)
+        
+        if existing_entry:
+            # Update the existing entry to "Monitor"
+            existing_entry["Functionality"] = "Monitor"
+            # Insert the new entry with "Short" functionality right after it
             new_per_patlist["Functionality"] = "Short"
             process_type["PerPatlistPatternsToDisable"].insert(index + 1, new_per_patlist)
         else:
+            # Insert the new entry with "Short" functionality
             process_type["PerPatlistPatternsToDisable"].insert(index, new_per_patlist)
 
         # Update the process_type in output_data
