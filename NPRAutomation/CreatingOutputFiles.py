@@ -334,7 +334,7 @@ def CreateSrhChkMappingFile(log_files_directory, test_instances_caught_by_regex)
                 'Power Domain': power_domain,
                 'Corner': corner,
                 'Template': template,
-                'ScoreboardBaseNumber': scoreboard_base_number,
+                'ScoreboardBaseNumber/BaseNumbers': scoreboard_base_number,
                 'Patlist': patlist,
                 'Scope': scope,
                 'Match Found': match_found

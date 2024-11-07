@@ -12,7 +12,7 @@
     <OutputPath>.</OutputPath>
     <Name>NPRAutomation</Name>
     <RootNamespace>NPRAutomation</RootNamespace>
-    <InterpreterId>MSBuild|env39|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|Python313|$(MSBuildProjectFullPath)</InterpreterId>
     <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -46,6 +46,15 @@
       <Id>env</Id>
       <Version>3.4</Version>
       <Description>env (Python 3.4 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
+    <Interpreter Include="Python313\">
+      <Id>Python313</Id>
+      <Version>0.0</Version>
+      <Description>Python313 (Python 3.13 (64-bit))</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
