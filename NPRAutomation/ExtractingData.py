@@ -114,7 +114,7 @@ def ExtractTestsWithPatlist(mtpl_files_with_mconfig, uservar_file_path):
                     template = line.split()[1]
                 if re.search(r"Patlist\s*=", line):
                     patlist = line.split("=")[1].split(";")[0].strip().strip('"')
-                if "ScoreboardBaseNumber" in line and "=" in line:
+                if ("ScoreboardBaseNumber" in line or "BaseNumbers" in line) and "=" in line:
                     scoreboard_base_number = line.split("=")[1].split(";")[0].strip().strip('"')
                  
                 pattern1 = r'"([^"]+)"\s*;'
@@ -438,6 +438,8 @@ def ExtractPatternsFromPlist(patlist, plist_content_path, ignore_patterns_with_r
 
                     # KEEP is in the line, after the ";", so search there and not in the pattern.
                     if not (re.search(r'\[Mask', pattern) or "#KEEP#" in line or any(re.search(regex, pattern) for regex in ignore_patterns_with_regexes)):
+                        #TODO: make sure the ignore_patterns_with_regexes captures every regex split by , like in the line below, use chatgpt.
+                        #[item.strip() for item in line.split(":")[1].split(',') if item.strip()]
                         patterns.append(pattern)
                     else:
                         num_of_patterns_to_keep += 1

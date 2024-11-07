@@ -310,7 +310,7 @@ def CreateSrhChkMappingFile(log_files_directory, test_instances_caught_by_regex)
     csv_path = os.path.join(log_files_directory, "SRH_CHK_Mapping.csv")
 
     with open(csv_path, 'w', newline='') as csvfile:
-        fieldnames = ['Module Name', 'Test Instance', 'Flow', 'Power Domain', 'Corner', 'Template', 'ScoreboardBaseNumber', 'Patlist', 'Scope', 'Match Found']
+        fieldnames = ['Module Name', 'Test Instance', 'Flow', 'Power Domain', 'Corner', 'Template', 'ScoreboardBaseNumber/BaseNumbers', 'Patlist', 'Scope', 'Match Found']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         
         writer.writeheader()
