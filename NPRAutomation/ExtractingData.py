@@ -587,6 +587,9 @@ def RemoveNotEnabledContentFromPatterns(test_name, test, input_files_path, searc
     return new_patterns, errors, patterns_to_keep
 
 def RemovePatternsABList(test):
+    if "patterns_to_keep_from_ab_list" not in test:
+        test["patterns_to_keep_from_ab_list"] = []
+
     if "patterns_to_remove_ab_list" in test and "tuples_to_keep" in test:
         patterns_to_remove_ab_list = test["patterns_to_remove_ab_list"]
         tuples_to_keep = test["tuples_to_keep"]
@@ -596,8 +599,10 @@ def RemovePatternsABList(test):
 
         # Iterate through patterns_to_remove_ab_list
         for pattern in patterns_to_remove_ab_list:
-            # Check if any of the tuple_part elements are in the pattern
-            if not any(tuple_part in pattern for tuple_part in tuples_to_keep):
+            # Extract the value of the pattern's "Pattern" field
+            pattern_value = pattern["Pattern"]
+            # Check if any of the tuple_part elements are in the pattern's value
+            if not any(tuple_part.strip("'") in pattern_value for tuple_part in tuples_to_keep):
                 # Add the pattern to updated_patterns if none of the tuple_part elements are in it
                 updated_patterns.append(pattern)
             else:
