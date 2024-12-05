@@ -43,7 +43,7 @@ def RemoveExcludedPatlists(tests_with_patlist, conf_file_path):
 
     filtered_tests = []
     excluded_tests = []
-    for test_name, patlist, scoreboard_base_number, pattern_name_map, template, mtpl_file, mconfig_file in tests_with_patlist:
+    for test_name, patlist, scoreboard_base_number, pattern_name_map, template, mtpl_file, mconfig_file, test_regex in tests_with_patlist:
         test_dict = {
             "test_name": test_name,
             "patlist": patlist,
@@ -51,7 +51,8 @@ def RemoveExcludedPatlists(tests_with_patlist, conf_file_path):
             "pattern_name_map": pattern_name_map,
             "template": template,
             "mtpl_file": mtpl_file,
-            "mconfig_file": mconfig_file
+            "mconfig_file": mconfig_file,
+            "test_regex": test_regex
         }
         if patlist not in excluded_patlists:
             filtered_tests.append(test_dict)
@@ -92,6 +93,7 @@ def ExtractTestsWithPatlist(mtpl_files_with_mconfig, uservar_file_path):
                     inside_test = True
                     curly_bracket_count = 0
                     bypass_port = False  # Reset bypass_port flag when entering a new test
+                    test_regex = CreateTestRegex(test_name, False)
                 elif line.startswith("MultiTrialTest "):
                     parts = line.split()
                     test_name = parts[-1]
@@ -104,14 +106,16 @@ def ExtractTestsWithPatlist(mtpl_files_with_mconfig, uservar_file_path):
                     if curly_bracket_count <= 0:
                         inside_test = False
                         if patlist is not None and not bypass_port:
-                            tests_with_patlist.append((test_name, patlist, scoreboard_base_number, pattern_name_map, template, mtpl_file, mconfig_file))
+                            tests_with_patlist.append((test_name, patlist, scoreboard_base_number, pattern_name_map, template, mtpl_file, mconfig_file,test_regex))
                             patlist = None
                 if inside_test and "BypassPort" in line and "=" in line and "#" not in line:
                     bypass_port_value = line.split("=")[1].split(";")[0].strip()
                     if bypass_port_value == "1":
                         bypass_port = True
-                if inside_test and "TrialTest" in line and test_name in line:
+                if inside_test and line.startswith("TrialTest "):
                     template = line.split()[1]
+                    line_parts=line.split()
+                    test_regex = CreateTestRegex( "".join(line_parts[2:]) , True)
                 if re.search(r"Patlist\s*=", line):
                     patlist = line.split("=")[1].split(";")[0].strip().strip('"')
                 if ("ScoreboardBaseNumber" in line or "BaseNumbers" in line) and "=" in line:
@@ -152,6 +156,18 @@ def ExtractTestsWithPatlist(mtpl_files_with_mconfig, uservar_file_path):
         print(f"The error is in instance {test_name} where right_side is {right_side} in module {mtpl_file} pattern name map is {pattern_name_map}")
         
     return tests_with_patlist
+
+def CreateTestRegex(test_name, isMtt):
+    if (isMtt):
+        unformatted_name_parts = test_name.replace("\"", "").replace(" ", "").split("+")
+        for i in range(len(unformatted_name_parts)):
+            if "flowmatrix" in unformatted_name_parts[i].lower():  # Case-insensitive check
+                unformatted_name_parts[i] = ".*"
+            # Join the modified parts into a single string
+        instance_regex = "".join(unformatted_name_parts)
+    else:
+        instance_regex = test_name
+    return instance_regex + "$"
 
 def GetTemplateForMTT(lines, test_name):
     template = None
@@ -220,7 +236,8 @@ def CatchTestInstancesByRegex(csv_file_path, filtered_tests):
                     "mconfig_file": test["mconfig_file"],
                     "search_or_check": search_or_check,
                     "power_domain": power_domain,
-                    "corner": corner
+                    "corner": corner,
+                    "test_regex": test["test_regex"]
                 })
 
                 matched = True
@@ -236,7 +253,8 @@ def CatchTestInstancesByRegex(csv_file_path, filtered_tests):
                     "mconfig_file": test["mconfig_file"],
                     "search_or_check": None,
                     "power_domain": None,
-                    "corner": None
+                    "corner": None,
+                    "test_regex": test["test_regex"]
                 })
 
     return test_instances_caught_by_regex, test_instances_not_caught
@@ -312,8 +330,9 @@ def AddRuleFileToTestInstances(test_instances_caught_by_regex, input_files_path,
 
 def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option_value, other_options_values, ignore_patterns_with_regexes, supersede_dir_path):
     errors = []
+    tests_to_bypass_regex = set()
     plist_found_in_files = set()
-
+    search_tests_error= {}
     for test in tests:
         test_name = test["test_name"]
         patlist = test["patlist"]
@@ -321,7 +340,9 @@ def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option
         mconfig_file = test["mconfig_file"]
         search_or_check = test["search_or_check"]
         test["removed_test_from_files"] = False
+        test_regex= test["test_regex"]
 
+        search_tests_error[test_name] = [] 
         if "::" in patlist:
             patlist = patlist.split("::", 1)[1]
 
@@ -343,6 +364,7 @@ def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option
                         test["patterns_to_disable"], errors_from_rules_search, test["patterns_to_keep_from_npr"] = RemoveEnabledContentFromPatterns(test_name, test, input_files_path)
                         for error in errors_from_rules_search:
                             errors.append(error)
+                            search_tests_error[test_name].append(error)
                         FindTestWithMatchingPatlist(test, tests, search_option_value, check_option_value)
                     elif search_or_check == check_option_value:
                         test["patterns_to_disable"], errors_from_rules_check, test["patterns_to_keep_from_npr"] = RemoveNotEnabledContentFromPatterns(test_name, test, input_files_path, search_option_value, check_option_value)
@@ -354,6 +376,8 @@ def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option
                                 test["patterns_to_disable"], errors_from_rules_search, test["patterns_to_keep_from_npr"] = RemoveEnabledContentFromPatterns(test_name, test, input_files_path)
                                 for error in errors_from_rules_search:
                                     errors.append(error)
+                                    search_tests_error[test_name].append(error)
+
                     break
 
         if not plist_found:
@@ -361,13 +385,21 @@ def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option
 
         if test["total_num_of_patterns_in_plist"] == len(test["patterns_to_disable"]):
             test["patterns_to_disable"].pop(0) #Remove the first pattern in the list
-            
+
+    for test_name, test_errors in search_tests_error.items():
+        for error in test_errors:
+            if "No rule file found for test:" in error:
+                # Find the corresponding test and add its regex
+                for test in tests:
+                    if test["test_name"] == test_name:
+                        tests_to_bypass_regex.add(test["test_regex"])
+                        break
     if errors:
         print("\nErrors with plists:")
         for error in errors:
             print(error)
 
-    return sorted(plist_found_in_files)
+    return sorted(plist_found_in_files),list(tests_to_bypass_regex)
 
 def FindTestWithMatchingPatlist(test, tests, search_option_value, check_option_value):  
     possible_patlists = GeneratePossiblePatlists(test["patlist"], search_option_value, check_option_value)
