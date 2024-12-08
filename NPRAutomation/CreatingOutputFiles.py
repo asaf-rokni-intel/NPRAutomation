@@ -414,7 +414,6 @@ def CreateBasicStatsFile(log_files_directory, test_instances_caught_by_regex, js
 
     print(f"BasicStats CSV file created at {csv_file_path}")
 
-   
 def GetPatlistDataFromJson(json_output_file):
     patlist_data = []
 

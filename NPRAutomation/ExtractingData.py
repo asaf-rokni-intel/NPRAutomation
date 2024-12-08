@@ -479,7 +479,7 @@ def RemoveEnabledContentFromPatterns(test_name, test, input_files_path):
     patlist = test["patlist"]
     patterns = test["patterns"]
     rule_files = LocateRuleFile(patlist, input_files_path)
-    patterns_to_keep = []
+    patterns_to_keep = test.get("patterns_to_keep", [])
 
     if len(patterns) == 1:
         test["removed_test_from_files"] = True
@@ -490,8 +490,9 @@ def RemoveEnabledContentFromPatterns(test_name, test, input_files_path):
             patterns.pop()
             return [], [f"No rule file found for test: {test_name} with patlist {patlist}. Only 1 pattern was in the patlist, so it was not removed."], patterns
         elif len(test["patterns"]) > 1:
-            patterns_to_keep = [test["patterns"][0]]  # Keep the first pattern
-            patterns = test["patterns"][1:]  # Disable the rest
+            if not patterns_to_keep:
+                patterns_to_keep.append(test["patterns"][0])  # Keep the first pattern if patterns_to_keep is empty
+                patterns = test["patterns"][1:]  # Disable the rest
             return patterns, [f"No rule file found for test: {test_name} with patlist {patlist}"], patterns_to_keep
 
     if isinstance(rule_files, list) and len(rule_files) > 1:
@@ -521,12 +522,12 @@ def RemoveEnabledContentFromPatterns(test_name, test, input_files_path):
                 error_msg = f"Invalid line in rule file '{rule_files}': Line {line.strip()} is not a valid number."
                 errors.append(error_msg)
                 
-        
     for pattern in patterns:
         if not any(str(num) in pattern for num in total_numbers_to_remove):
             patterns_to_keep.append(pattern)
 
     return patterns, errors, patterns_to_keep
+
 
 def RemoveNotEnabledContentFromPatterns(test_name, test, input_files_path, search_option_value, check_option_value):
     patlist = test["patlist"]
