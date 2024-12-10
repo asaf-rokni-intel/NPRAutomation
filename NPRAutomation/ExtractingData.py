@@ -6,6 +6,31 @@ import re
 from tkinter import N
 from tracemalloc import take_snapshot
 import xml.etree.ElementTree as ET
+ 
+ERROR_MESSAGES = {
+    "NO_RULE_FILE": {
+        "code": "NO_RULE_FILE",
+        "message": "No rule file found for test: {test_name} with patlist {patlist}."
+    },
+    "NO_RULE_FILE_SINGLE_PATTERN": {
+        "code": "NO_RULE_FILE_SINGLE_PATTERN",
+        "message": "No rule file found for test: {test_name} with patlist {patlist}. Only 1 pattern was in the patlist, so it was not removed."
+    },
+    "SINGLE_PATTERN": {
+        "code": "SINGLE_PATTERN",
+        "message": "The test {test_name} with patlist {patlist} has only 1 pattern in the patlist, so it was not removed."
+    },
+    "MULTIPLE_RULE_FILES": {
+        "code": "MULTIPLE_RULE_FILES",
+        "message": "Multiple rule files found for test: {test_name} with patlist {patlist}. Only one rule file is allowed per Plist."
+    },
+    "INVALID_LINE": {
+        "code": "INVALID_LINE",
+        "message": "Invalid line in rule file '{rule_files}': Line '{line}' is not a valid number."
+    }
+}
+
+
 
 def CheckModulesDirectory(tp_path):
     modules_path = os.path.join(tp_path, "Modules")
@@ -159,9 +184,9 @@ def ExtractTestsWithPatlist(mtpl_files_with_mconfig, uservar_file_path):
 
 def CreateTestRegex(test_name, isMtt):
     if (isMtt):
-        unformatted_name_parts = test_name.replace("\"", "").replace(" ", "").split("+")
+        unformatted_name_parts = test_name.replace(" ", "").split("+")
         for i in range(len(unformatted_name_parts)):
-            if "flowmatrix" in unformatted_name_parts[i].lower():  # Case-insensitive check
+            if "\"" not in unformatted_name_parts[i].lower():  # Case-insensitive check
                 unformatted_name_parts[i] = ".*"
             # Join the modified parts into a single string
         instance_regex = "".join(unformatted_name_parts)
@@ -376,8 +401,6 @@ def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option
                                 test["patterns_to_disable"], errors_from_rules_search, test["patterns_to_keep_from_npr"] = RemoveEnabledContentFromPatterns(test_name, test, input_files_path)
                                 for error in errors_from_rules_search:
                                     errors.append(error)
-                                    search_tests_error[test_name].append(error)
-
                     break
 
         if not plist_found:
@@ -388,7 +411,7 @@ def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option
 
     for test_name, test_errors in search_tests_error.items():
         for error in test_errors:
-            if "No rule file found for test:" in error:
+            if error["code"] in {"NO_RULE_FILE_PATTERNS", "SINGLE_PATTERN", "NO_RULE_FILE_SINGLE_PATTERN" }:
                 # Find the corresponding test and add its regex
                 for test in tests:
                     if test["test_name"] == test_name:
@@ -397,7 +420,7 @@ def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option
     if errors:
         print("\nErrors with plists:")
         for error in errors:
-            print(error)
+            print(error["message"])
 
     return sorted(plist_found_in_files),list(tests_to_bypass_regex)
 
@@ -515,19 +538,19 @@ def RemoveEnabledContentFromPatterns(test_name, test, input_files_path):
 
     if len(patterns) == 1:
         test["removed_test_from_files"] = True
-        return [], [f"The test {test_name} with patlist {patlist} has only 1 pattern in the patlist, so it was not removed."], patterns
+        return [], [format_error("SINGLE_PATTERN", test_name=test_name, patlist=patlist)], patterns
 
     if rule_files is None or len(rule_files) == 0:
         if len(patterns) == 1:
             patterns.pop()
-            return [], [f"No rule file found for test: {test_name} with patlist {patlist}. Only 1 pattern was in the patlist, so it was not removed."], patterns
+            return [], [format_error("NO_RULE_FILE_SINGLE_PATTERN", test_name=test_name, patlist=patlist)], patterns
         elif len(test["patterns"]) > 1:
             patterns_to_keep = [test["patterns"][0]]  # Keep the first pattern
             patterns = test["patterns"][1:]  # Disable the rest
-            return patterns, [f"No rule file found for test: {test_name} with patlist {patlist}"], patterns_to_keep
+            return patterns, [format_error("NO_RULE_FILE", test_name=test_name, patlist=patlist)], patterns_to_keep
 
     if isinstance(rule_files, list) and len(rule_files) > 1:
-        error_msg = f"Multiple rule files found for test: {test_name} with patlist {patlist}. Only one rule file is allowed per Plist."
+        error_msg = format_error("MULTIPLE_RULE_FILES", test_name=test_name, patlist=patlist)
         return patterns, [error_msg], patterns_to_keep
 
     with open(rule_files, 'r') as file:
@@ -550,7 +573,7 @@ def RemoveEnabledContentFromPatterns(test_name, test, input_files_path):
             elif len(parts) == 0:
                 continue
             else:
-                error_msg = f"Invalid line in rule file '{rule_files}': Line {line.strip()} is not a valid number."
+                error_msg = format_error("INVALID_LINE", rule_files=rule_files, line=line.strip())
                 errors.append(error_msg)
                 
         
@@ -581,10 +604,10 @@ def RemoveNotEnabledContentFromPatterns(test_name, test, input_files_path, searc
     rule_files = list(set(rule_files))
 
     if rule_files is None or len(rule_files) == 0:
-        return patterns, [f"No rule file found for test: {test_name} with patlist {patlist}."], patterns
+        return patterns, [format_error("NO_RULE_FILE", test_name=test_name, patlist=patlist)], patterns
 
     if isinstance(rule_files, list) and len(rule_files) > 1:
-        error_msg = f"Multiple rule files found for test: {test_name} with patlist {patlist}. Only one rule file is allowed per Plist."
+        error_msg = format_error("MULTIPLE_RULE_FILES", test_name=test_name, patlist=patlist)
         return patterns, [error_msg], []
 
     with open(rule_files[0], 'r') as file:
@@ -609,7 +632,7 @@ def RemoveNotEnabledContentFromPatterns(test_name, test, input_files_path, searc
             elif len(parts) == 0:
                 continue
             else:
-                error_msg = f"Invalid line in rule file '{rule_files}': Line {line.strip()} is not a valid number."
+                error_msg = format_error("INVALID_LINE", rule_files=rule_files, line=line.strip())
                 errors.append(error_msg)
     
     for pattern in patterns:
@@ -702,3 +725,7 @@ def AddPatternsAndScope(test, ignore_patterns_with_regexes, supersede_dir_path):
         with open(plist_file, 'r') as plist_content:
             if patlist in plist_content.read():
                 test["patterns"], test["total_num_of_patterns_in_plist"], test["num_of_patterns_to_keep"], test["patterns_to_keep"], test["patterns_with_multiple_occurrences"] = ExtractPatternsFromPlist(patlist, plist_file, ignore_patterns_with_regexes)
+
+def format_error(error_key, **kwargs):
+    error = ERROR_MESSAGES[error_key]
+    return {"code": error["code"], "message": error["message"].format(**kwargs)}
