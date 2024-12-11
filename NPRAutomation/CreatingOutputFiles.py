@@ -7,7 +7,7 @@ import shutil
 import sys
 from ExtractingData import *
 
-def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, outputs_in_tp, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path):
+def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, outputs_in_tp, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path,tests_to_bypass_regex):
     #Create NPRCriteriaFile.csv
     npr_criteria_csv_path = os.path.join(outputs_in_tp, "NPRCriteriaFile.csv")
     print("Creating NPRCriteriaFile.csv file.")
@@ -53,7 +53,16 @@ def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, out
     print("Creating a directory for log files.")
     FillLogFilesDirectory(log_files_directory, test_instances_caught_by_regex, pup_json_path, test_instances_not_caught)
 
+    #Create srh tests to bypass json
+    srh_tests_json_path = os.path.join(output_path, "SrhInstances.json")
+    FillSrhBypassJson(tests_to_bypass_regex,srh_tests_json_path)
+
     return log_files_directory
+
+def FillSrhBypassJson(tests_to_bypass_regex,srh_tests_json_path):
+    # Placeholder function definition
+    with open(srh_tests_json_path, 'w') as json_file:
+        json.dump(tests_to_bypass_regex, json_file, indent=4)
 
 def FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path, dont_run_chk, other_options_values):
     with open(conf_file_path, 'r') as conf_file:
