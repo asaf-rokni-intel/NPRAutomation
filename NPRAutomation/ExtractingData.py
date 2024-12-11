@@ -184,10 +184,12 @@ def ExtractTestsWithPatlist(mtpl_files_with_mconfig, uservar_file_path):
 
 def CreateTestRegex(test_name, isMtt):
     if (isMtt):
-        unformatted_name_parts = test_name.replace(" ", "").split("+")
+        unformatted_name_parts = test_name.replace(" ", "").split("+") # unformatted TrialTest name 
         for i in range(len(unformatted_name_parts)):
             if "\"" not in unformatted_name_parts[i].lower():  # Case-insensitive check
                 unformatted_name_parts[i] = ".*"
+            else:
+                unformatted_name_parts[i]=  unformatted_name_parts[i].replace("\"", "")
             # Join the modified parts into a single string
         instance_regex = "".join(unformatted_name_parts)
     else:
@@ -411,7 +413,7 @@ def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option
 
     for test_name, test_errors in search_tests_error.items():
         for error in test_errors:
-            if error["code"] in {"NO_RULE_FILE_PATTERNS", "SINGLE_PATTERN", "NO_RULE_FILE_SINGLE_PATTERN" }:
+            if error["code"] in {"NO_RULE_FILE", "SINGLE_PATTERN", "NO_RULE_FILE_SINGLE_PATTERN" }:
                 # Find the corresponding test and add its regex
                 for test in tests:
                     if test["test_name"] == test_name:
@@ -548,6 +550,8 @@ def RemoveEnabledContentFromPatterns(test_name, test, input_files_path):
             patterns_to_keep = [test["patterns"][0]]  # Keep the first pattern
             patterns = test["patterns"][1:]  # Disable the rest
             return patterns, [format_error("NO_RULE_FILE", test_name=test_name, patlist=patlist)], patterns_to_keep
+        elif len(test["patterns_to_keep"]) > 0:
+           return [], [format_error("NO_RULE_FILE", test_name=test_name, patlist=patlist)], []
 
     if isinstance(rule_files, list) and len(rule_files) > 1:
         error_msg = format_error("MULTIPLE_RULE_FILES", test_name=test_name, patlist=patlist)
