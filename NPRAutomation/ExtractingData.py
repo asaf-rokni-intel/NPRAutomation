@@ -413,7 +413,7 @@ def ProcessPlistFiles(tests, input_files_path, search_option_value, check_option
 
     for test_name, test_errors in search_tests_error.items():
         for error in test_errors:
-            if error["code"] in {"NO_RULE_FILE", "SINGLE_PATTERN", "NO_RULE_FILE_SINGLE_PATTERN" }:
+            if error["code"] in {"NO_RULE_FILE", "NO_RULE_FILE_SINGLE_PATTERN" }:
                 # Find the corresponding test and add its regex
                 for test in tests:
                     if test["test_name"] == test_name:
