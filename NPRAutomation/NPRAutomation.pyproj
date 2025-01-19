@@ -12,7 +12,7 @@
     <OutputPath>.</OutputPath>
     <Name>NPRAutomation</Name>
     <RootNamespace>NPRAutomation</RootNamespace>
-    <InterpreterId>MSBuild|Python313|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|env39|$(MSBuildProjectFullPath)</InterpreterId>
     <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">

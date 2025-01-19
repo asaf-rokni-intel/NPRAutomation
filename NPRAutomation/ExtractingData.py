@@ -499,8 +499,15 @@ def RemoveEnabledContentFromPatterns(test_name, test, input_files_path):
         error_msg = f"Multiple rule files found for test: {test_name} with patlist {patlist}. Only one rule file is allowed per Plist."
         return patterns, [error_msg], patterns_to_keep
 
-    with open(rule_files, 'r') as file:
-        lines = file.readlines()
+    try:
+        with open(rule_files, 'r') as file:
+            lines = file.readlines()
+    except Exception as e:
+        log_message = f"Failed to open rule file for test: {test_name} with patlist {patlist}. Error: {e}"
+        print(log_message)  # Log to console
+        with open("logfile.log", "a") as log_file:  # Append to log file
+            log_file.write(log_message + "\n")
+        return patterns, [log_message], patterns_to_keep
 
     enable_content_found = False
     errors = []
@@ -527,7 +534,6 @@ def RemoveEnabledContentFromPatterns(test_name, test, input_files_path):
             patterns_to_keep.append(pattern)
 
     return patterns, errors, patterns_to_keep
-
 
 def RemoveNotEnabledContentFromPatterns(test_name, test, input_files_path, search_option_value, check_option_value):
     patlist = test["patlist"]
