@@ -7,7 +7,7 @@ import shutil
 import sys
 from ExtractingData import *
 
-def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, outputs_in_tp, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path):
+def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, outputs_in_tp, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path, debug_mode):
     #Create NPRCriteriaFile.csv
     npr_criteria_csv_path = os.path.join(outputs_in_tp, "NPRCriteriaFile.csv")
     print("Creating NPRCriteriaFile.csv file.")
@@ -40,11 +40,12 @@ def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, out
     FillPatternsLeftFile(test_instances_caught_by_regex, patterns_left_file_path)
 
     #Create SourceFiles directory
-    source_files_directory = os.path.join(output_path, "SourceFiles")
-    if not os.path.exists(source_files_directory):
-        os.makedirs(source_files_directory)
-    print("Creating a directory for source files.")
-    FillSourceFilesDirectory(source_files_directory, input_files_path, plist_found_in_files)
+    if debug_mode:
+        source_files_directory = os.path.join(output_path, "SourceFiles")
+        if not os.path.exists(source_files_directory):
+            os.makedirs(source_files_directory)
+        print("Creating a directory for source files.")
+        FillSourceFilesDirectory(source_files_directory, input_files_path, plist_found_in_files)
 
     #Create LogFiles directory
     log_files_directory = os.path.join(output_path, "LogFiles")

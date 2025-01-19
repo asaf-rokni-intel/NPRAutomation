@@ -11,7 +11,7 @@ def check_debug_mode(conf_file_path):
         for line in conf_file:
             if "DebugMode:" in line:
                 parts = line.split()
-                if len(parts) > 2 and parts[2].lower() in ["y", "yes"]:
+                if len(parts) >= 2 and parts[1].lower() in ["y", "yes"]:
                     debug_mode = True
                     break
     return debug_mode
@@ -121,7 +121,7 @@ if __name__ == "__main__":
                 print()
 
         #Creating output files:
-        log_files_directory = CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, outputs_in_tp, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path)
+        log_files_directory = CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, outputs_in_tp, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path, debug_mode)
 
         sys.stdout = original_stdout
         sys.stderr = original_stderr
