@@ -7,7 +7,7 @@ import shutil
 import sys
 from ExtractingData import *
 
-def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, outputs_in_tp, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path, debug_mode):
+def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, outputs_in_tp, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path, tests_to_bypass_regex, debug_mode):
     #Create NPRCriteriaFile.csv
     npr_criteria_csv_path = os.path.join(outputs_in_tp, "NPRCriteriaFile.csv")
     print("Creating NPRCriteriaFile.csv file.")
@@ -54,7 +54,16 @@ def CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, out
     print("Creating a directory for log files.")
     FillLogFilesDirectory(log_files_directory, test_instances_caught_by_regex, pup_json_path, test_instances_not_caught)
 
+    #Create srh tests to bypass json
+    srh_tests_json_path = os.path.join(output_path, "SrhInstances.json")
+    FillSrhBypassJson(tests_to_bypass_regex,srh_tests_json_path)
+
     return log_files_directory
+
+def FillSrhBypassJson(tests_to_bypass_regex,srh_tests_json_path):
+    # Placeholder function definition
+    with open(srh_tests_json_path, 'w') as json_file:
+        json.dump(tests_to_bypass_regex, json_file, indent=4)
 
 def FillNPRCriteriaFile(conf_file_path, npr_criteria_csv_path, dont_run_chk, other_options_values):
     with open(conf_file_path, 'r') as conf_file:
@@ -365,6 +374,7 @@ def CreateBasicStatsFile(log_files_directory, test_instances_caught_by_regex, js
             test_impacted_by = "Nothing"
             total_patterns = 0
 
+            # Search in test_instances_caught_by_regex:
             for test in test_instances_caught_by_regex:
                 if patlist == test["scope"] + "::" + test["patlist"] or patlist == test["patlist"]:
                     total_patterns = test.get("total_num_of_patterns_in_plist", 0)
@@ -385,6 +395,7 @@ def CreateBasicStatsFile(log_files_directory, test_instances_caught_by_regex, js
                         comment = None
                     break
 
+            # If not found, search in test_instances_not_caught
             if total_patterns == 0:
                 for test in test_instances_not_caught:
                     if patlist.split("::")[1] == test["patlist"]:
@@ -401,20 +412,22 @@ def CreateBasicStatsFile(log_files_directory, test_instances_caught_by_regex, js
                                 test_impacted_by = None
                         break
 
-            removed_patterns_with_occurrences = removed_patterns
-            for pattern_info in test.get("patterns_with_multiple_occurrences", {}):
-                occurrences = test["patterns_with_multiple_occurrences"][pattern_info]
-                removed_patterns_with_occurrences += len(occurrences) - 1
+            # if "patterns_to_disable" in test:
+            #     patterns_to_disable_in_test = test.get("patterns_to_disable")
+            # elif "patterns_to_remove_ab_list" in test:
+            #     patterns_to_disable_in_test = test.get("patterns_to_remove_ab_list")
+            # else:
+            #     patterns_to_disable_in_test = []
 
-            reduction_rate = (removed_patterns_with_occurrences / total_patterns) * 100 if total_patterns > 0 else 0
-            executed_patterns = total_patterns - removed_patterns_with_occurrences
+            reduction_rate = (removed_patterns / total_patterns) * 100 if total_patterns > 0 else 0
+            executed_patterns = total_patterns - removed_patterns
             test_name = test.get("test_name")
             module_name = os.path.splitext(os.path.basename(test.get("mtpl_file")))[0]
 
-            csv_writer.writerow([module_name, test_name, patlist, functionality, total_patterns, removed_patterns_with_occurrences, executed_patterns, reduction_rate, test_impacted_by, comment])
+            csv_writer.writerow([module_name, test_name, patlist, functionality, total_patterns, removed_patterns, executed_patterns, reduction_rate, test_impacted_by, comment])
 
     print(f"BasicStats CSV file created at {csv_file_path}")
-
+   
 def GetPatlistDataFromJson(json_output_file):
     patlist_data = []
 

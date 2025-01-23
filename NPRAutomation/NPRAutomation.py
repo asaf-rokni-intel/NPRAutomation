@@ -73,7 +73,7 @@ if __name__ == "__main__":
         filtered_tests, excluded_tests = RemoveExcludedPatlists(tests_with_patlist, conf_file_path)
         test_instances_caught_by_regex, test_instances_not_caught = CatchTestInstancesByRegex(csv_file_path, filtered_tests)    
         removed_tests = AddRuleFileToTestInstances(test_instances_caught_by_regex, input_files_path, other_options_values)
-        plist_found_in_files = ProcessPlistFiles(test_instances_caught_by_regex, input_files_path, search_option_value, check_option_value, other_options_values, ignore_patterns_with_regexes, supersede_dir_path)
+        plist_found_in_files, tests_to_bypass_regex = ProcessPlistFiles(test_instances_caught_by_regex, input_files_path, search_option_value, check_option_value, other_options_values, ignore_patterns_with_regexes, supersede_dir_path)
         
         if debug_mode:
             print()
@@ -105,6 +105,7 @@ if __name__ == "__main__":
 
             print()
 
+        print()
         for test in test_instances_caught_by_regex:
             test_name = test["test_name"]
             patlist = test["patlist"]
@@ -121,7 +122,7 @@ if __name__ == "__main__":
                 print()
 
         #Creating output files:
-        log_files_directory = CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, outputs_in_tp, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path, debug_mode)
+        log_files_directory = CreatingOutputFiles(input_files_path, plist_found_in_files, output_path, outputs_in_tp, conf_file_path, test_instances_caught_by_regex, log_file_path, json_file_path, test_instances_not_caught, dont_run_chk, ignore_patterns_with_regexes, other_options_values, supersede_dir_path, tests_to_bypass_regex, debug_mode)
 
         sys.stdout = original_stdout
         sys.stderr = original_stderr
